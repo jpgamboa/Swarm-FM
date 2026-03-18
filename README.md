@@ -22,9 +22,15 @@ cd swarmfm
 
 Go to https://benjaminbenben.com/lastfm-to-csv/, enter your username, and download the CSV. Save it somewhere on your machine.
 
-**3. Export your Foursquare history**
+**3. Export your Foursquare/Swarm history**
 
-Download your data at https://foursquare.com/download-my-data. Extract the zip — you'll get a folder containing `checkins1.json`, `checkins2.json`, etc.
+Request a data export through Foursquare (exports both City Guide and Swarm data together):
+
+**On the web:** Log in at foursquare.com → click your name (top right) → Settings → Privacy Settings → Initiate Data Download Request
+
+**In the Swarm app:** Profile (top left) → gear icon → Settings → Privacy Settings → Initiate Data Download Request
+
+You'll get a confirmation email from `noreply@legal.foursquare.com`, then a second email with a download link when your data is ready (up to 7 days). Extract the zip — you'll get a folder containing `checkins1.json`, `checkins2.json`, etc.
 
 **4. Configure**
 ```bash
