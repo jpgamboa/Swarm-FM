@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>swarmfm — Last.fm × Swarm</title>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+  :root {
+    --bg: #111111;
+    --card: #1c1c1c;
+    --card2: #222222;
+    --accent: #1ed760;
+    --text: #ffffff;
+    --text-dim: #b3b3b3;
+    --text-faint: #444;
+    --border: #2a2a2a;
+    --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+  header {
+    padding: 48px 32px 32px;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 2.4rem; font-weight: 700; letter-spacing: -0.03em; }
+  header h1 span { color: var(--accent); }
+  header p { color: var(--text-dim); margin-top: 8px; font-size: 1rem; }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  .stats-row {
+    display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 24px; flex: 1; min-width: 160px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .stat-card .value { font-size: 1.7rem; font-weight: 700; color: var(--text); }
+  .stat-card .label { font-size: 0.78rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .section-title {
+    font-size: 1.15rem; font-weight: 600; margin: 40px 0 4px;
+    color: var(--text);
+  }
+  .section-sub { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 14px; }
+
+  .chart-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; overflow: hidden;
+  }
+  .chart-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;
+  }
+  @media (max-width: 700px) { .chart-row { grid-template-columns: 1fr; } }
+
+  .records-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px; margin-bottom: 16px;
+  }
+  .record-card {
+    background: var(--card2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .record-card .rc-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .record-card .rc-value { font-size: 1.1rem; font-weight: 600; color: var(--text); }
+  .record-card .rc-sub { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
+
+  .sessions-table {
+    width: 100%; border-collapse: collapse; font-size: 0.875rem;
+  }
+  .sessions-table th {
+    text-align: left; padding: 8px 12px; color: var(--text-dim);
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;
+  }
+  .sessions-table th:hover { color: var(--accent); }
+  .sessions-table td {
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    vertical-align: top; color: var(--text-dim);
+  }
+  .sessions-table td:first-child { color: var(--text); }
+  .sessions-table tbody tr:hover td { background: var(--card2); }
+
+  .plays-pill {
+    display: inline-block; background: var(--card2);
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 2px 10px; font-size: 0.78rem; color: var(--text-dim);
+    margin: 2px 2px 0 0;
+  }
+  .score-green { color: #1ed760; font-weight: 700; }
+  .score-white { color: #ffffff; font-weight: 600; }
+  .score-dim   { color: var(--text-dim); }
+
+  footer {
+    text-align: center; padding: 32px 16px;
+    color: var(--text-faint); font-size: 0.8rem;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Last.fm <span>× Swarm</span></h1>
+  <p id="header-sub">Loading...</p>
+</header>
+
+<main>
+  <div class="stats-row" id="fs-top-stats"></div>
+
+  <!-- 1. Stats overview -->
+  <div class="section-title">Overview</div>
+  <div class="section-sub">Your Foursquare history at a glance</div>
+  <div class="records-grid" id="fs-stats"></div>
+
+  <!-- 2. Timeline -->
+  <div class="section-title">Listening vs Going Out</div>
+  <div class="section-sub">Monthly scrobbles and check-ins over time</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div id="chart-fs-timeline" style="height:280px"></div>
+  </div>
+
+  <!-- 3. Day of Week -->
+  <div class="section-title">Day-of-Week Patterns</div>
+  <div class="section-sub">When you go out vs when you listen, normalized to %</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div id="chart-fs-dow" style="height:260px"></div>
+  </div>
+
+  <!-- 4. Scatter -->
+  <div class="section-title">More Check-ins = More Music?</div>
+  <div class="section-sub">Monthly check-in count vs scrobble count — is there a correlation?</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div id="chart-fs-scatter" style="height:280px"></div>
+  </div>
+
+  <!-- 5. Category + Country -->
+  <div class="section-title">Listens by Venue Type &amp; Country</div>
+  <div class="section-sub" id="fs-attr-sub">Scrobbles attributed to a Foursquare check-in</div>
+  <div class="chart-row" style="margin-bottom:0">
+    <div class="chart-card"><div id="chart-fs-category" style="height:300px"></div></div>
+    <div class="chart-card"><div id="chart-fs-country" style="height:300px"></div></div>
+  </div>
+
+  <!-- 6. City bar + map -->
+  <div class="section-title">Listens by City</div>
+  <div class="section-sub">Where in the world were you listening?</div>
+  <div class="chart-row" style="margin-bottom:0">
+    <div class="chart-card"><div id="chart-fs-city" style="height:320px"></div></div>
+    <div class="chart-card"><div id="chart-fs-city-map" style="height:320px"></div></div>
+  </div>
+
+  <!-- 7. Venue plays -->
+  <div class="section-title">Where Were You Listening?</div>
+  <div class="section-sub">Venues ranked by attributed scrobbles</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div id="chart-fs-venue-plays" style="height:340px"></div>
+  </div>
+
+  <!-- 8. Venue artists table -->
+  <div class="section-title">What Were You Listening To There?</div>
+  <div class="section-sub">Top venues with their most-played artists</div>
+  <div class="chart-card" style="margin-bottom:16px; overflow-x:auto">
+    <div id="fs-venue-artists"></div>
+  </div>
+
+  <!-- 9. Top venues by checkin -->
+  <div class="section-title">Your Most Visited Places</div>
+  <div class="section-sub">Top 30 venues by check-in count</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div id="chart-fs-venues" style="height:400px"></div>
+  </div>
+
+  <!-- 10. Trips table -->
+  <div class="section-title">Trips &amp; Their Vibes</div>
+  <div class="section-sub">Away-from-home periods detected from your check-in history</div>
+  <div class="chart-card" style="margin-bottom:16px; overflow-x:auto">
+    <div id="fs-trips-table"></div>
+  </div>
+
+  <!-- 11. Travel artists -->
+  <div class="section-title">Travel Artists</div>
+  <div class="section-sub">Artists you listen to more while travelling vs at home (lift ratio)</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div id="chart-fs-travel-artists" style="height:340px"></div>
+  </div>
+</main>
+
+<footer>Data from Last.fm &amp; Foursquare &middot; Reverse geocoded via Nominatim/OpenStreetMap</footer>
+
+<script>
+// ── Plotly theme ──────────────────────────────────────────────────────────────
+const CARD_BG = '#1c1c1c', ACCENT = '#1ed760', DIM = '#b3b3b3';
+const FONT = 'system-ui,-apple-system,sans-serif', GRID = '#2a2a2a';
+const BASE = {
+  paper_bgcolor: CARD_BG, plot_bgcolor: CARD_BG,
+  font: { color: DIM, family: FONT, size: 12 },
+  margin: { t: 16, r: 16, b: 40, l: 16 },
+  xaxis: { gridcolor: GRID, zerolinecolor: GRID },
+  yaxis: { gridcolor: GRID, zerolinecolor: GRID },
+  showlegend: false,
+  hoverlabel: { bgcolor: '#333', bordercolor: '#555', font: { color: '#fff', family: FONT } },
+};
+const CFG = { responsive: true, displayModeBar: false };
+function L(o = {}) { return Object.assign({}, BASE, o); }
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function _ccFlag(cc) {
+  if (!cc || cc.length !== 2) return '';
+  return String.fromCodePoint(...[...cc.toUpperCase()].map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
+}
+
+const CAT_LABELS = {
+  travel: 'Travel / In-Flight', transit: 'Transit', coffee: 'Coffee Shop',
+  bar_brewery: 'Bar/Brewery', restaurant: 'Restaurant', music_venue: 'Music Venue',
+  cinema: 'Cinema', hotel: 'Hotel', gym: 'Gym', work: 'Work/Office',
+  outdoor: 'Outdoors', shopping: 'Shopping', personal_care: 'Personal Care', other: 'Other',
+};
+
+function _pearson(xs, ys) {
+  const n = xs.length;
+  if (n < 2) return 0;
+  const mx = xs.reduce((a, b) => a + b, 0) / n;
+  const my = ys.reduce((a, b) => a + b, 0) / n;
+  let num = 0, dx = 0, dy = 0;
+  for (let i = 0; i < n; i++) {
+    const ex = xs[i] - mx, ey = ys[i] - my;
+    num += ex * ey; dx += ex * ex; dy += ey * ey;
+  }
+  return dx && dy ? num / Math.sqrt(dx * dy) : 0;
+}
+
+// ── Main render ────────────────────────────────────────────────────────────────
+function renderFoursquare() {
+  const FS = D.foursquare || {};
+
+  // 1. Stats overview cards
+  const topVenue = (FS.top_venues || [])[0] || {};
+  document.getElementById('fs-stats').innerHTML = [
+    `<div class="record-card"><div class="rc-label">Total Check-ins</div><div class="rc-value">${(FS.total||0).toLocaleString()}</div></div>`,
+    `<div class="record-card"><div class="rc-label">Unique Venues</div><div class="rc-value">${(FS.unique_venues||0).toLocaleString()}</div></div>`,
+    `<div class="record-card"><div class="rc-label">Date Range</div><div class="rc-value">${(FS.date_range||[])[0]||'—'}</div><div class="rc-sub">to ${(FS.date_range||[])[1]||'—'}</div></div>`,
+    `<div class="record-card"><div class="rc-label">Most Visited</div><div class="rc-value" style="font-size:.95rem">${topVenue.name||'—'}</div><div class="rc-sub">${(topVenue.count||0).toLocaleString()} check-ins</div></div>`,
+    `<div class="record-card"><div class="rc-label">Attributed Scrobbles</div><div class="rc-value">${(FS.attributed_plays||0).toLocaleString()}</div><div class="rc-sub">${FS.attributed_pct||0}% of listens placed</div></div>`,
+  ].join('');
+
+  // Update section 5 subtitle
+  const attrSub = document.getElementById('fs-attr-sub');
+  if (attrSub) {
+    attrSub.textContent = `${(FS.attributed_plays||0).toLocaleString()} scrobbles (${FS.attributed_pct||0}%) attributed to a Foursquare check-in`;
+  }
+
+  // 2. Timeline — dual-axis line chart
+  const byMonth = FS.by_month || [];
+  const playsMonth = D.plays_by_month || [];
+
+  // Build aligned month keys
+  const allMonths = [...new Set([
+    ...byMonth.map(d => d.month),
+    ...playsMonth.map(d => d.month),
+  ])].sort();
+
+  const ckMap = Object.fromEntries(byMonth.map(d => [d.month, d.count]));
+  const plMap = Object.fromEntries(playsMonth.map(d => [d.month, d.count]));
+
+  Plotly.newPlot('chart-fs-timeline', [
+    {
+      x: allMonths, y: allMonths.map(m => plMap[m] || 0),
+      type: 'scatter', mode: 'lines', name: 'Scrobbles',
+      line: { color: ACCENT, width: 2 },
+      hovertemplate: '%{x}: %{y:,} plays<extra></extra>',
+    },
+    {
+      x: allMonths, y: allMonths.map(m => ckMap[m] || 0),
+      type: 'scatter', mode: 'lines', name: 'Check-ins',
+      line: { color: '#e05c5c', width: 2, dash: 'dot' },
+      yaxis: 'y2',
+      hovertemplate: '%{x}: %{y:,} check-ins<extra></extra>',
+    },
+  ], L({
+    showlegend: true,
+    legend: { x: 0.01, y: 0.98, font: { color: DIM, size: 11 }, bgcolor: 'rgba(0,0,0,0)' },
+    xaxis: { gridcolor: GRID, zerolinecolor: GRID, tickangle: -45 },
+    yaxis: { gridcolor: GRID, zerolinecolor: GRID, title: { text: 'Scrobbles', font: { color: ACCENT, size: 11 } } },
+    yaxis2: {
+      overlaying: 'y', side: 'right', gridcolor: GRID, zerolinecolor: GRID,
+      title: { text: 'Check-ins', font: { color: '#e05c5c', size: 11 } },
+    },
+    margin: { t: 16, r: 60, b: 60, l: 50 },
+  }), CFG);
+
+  // 3. Day-of-week grouped bar (normalized %)
+  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const fsDow = FS.by_dow || [0,0,0,0,0,0,0];
+  const plDow = D.plays_by_dow || [0,0,0,0,0,0,0];
+  const fsTotal = fsDow.reduce((a,b) => a+b, 0) || 1;
+  const plTotal = plDow.reduce((a,b) => a+b, 0) || 1;
+  const fsDowPct = fsDow.map(v => +((v/fsTotal)*100).toFixed(1));
+  const plDowPct = plDow.map(v => +((v/plTotal)*100).toFixed(1));
+
+  Plotly.newPlot('chart-fs-dow', [
+    {
+      x: DAYS, y: plDowPct, type: 'bar', name: 'Scrobbles %',
+      marker: { color: ACCENT },
+      hovertemplate: '%{x}: %{y:.1f}%<extra>Scrobbles</extra>',
+    },
+    {
+      x: DAYS, y: fsDowPct, type: 'bar', name: 'Check-ins %',
+      marker: { color: '#e05c5c' },
+      hovertemplate: '%{x}: %{y:.1f}%<extra>Check-ins</extra>',
+    },
+  ], L({
+    barmode: 'group', showlegend: true,
+    legend: { x: 0.01, y: 0.98, font: { color: DIM, size: 11 }, bgcolor: 'rgba(0,0,0,0)' },
+    yaxis: { gridcolor: GRID, zerolinecolor: GRID, ticksuffix: '%' },
+    margin: { t: 16, r: 16, b: 40, l: 50 },
+  }), CFG);
+
+  // 4. Scatter — checkins vs plays per month
+  const scMonths = allMonths.filter(m => ckMap[m] && plMap[m]);
+  const scX = scMonths.map(m => ckMap[m]);
+  const scY = scMonths.map(m => plMap[m]);
+  const r = _pearson(scX, scY);
+
+  Plotly.newPlot('chart-fs-scatter', [
+    {
+      x: scX, y: scY, mode: 'markers', type: 'scatter',
+      text: scMonths,
+      marker: { color: ACCENT, size: 7, opacity: 0.7 },
+      hovertemplate: '%{text}<br>Check-ins: %{x}<br>Scrobbles: %{y:,}<extra></extra>',
+    },
+  ], L({
+    xaxis: { gridcolor: GRID, zerolinecolor: GRID, title: { text: 'Check-ins', font: { color: DIM, size: 11 } } },
+    yaxis: { gridcolor: GRID, zerolinecolor: GRID, title: { text: 'Scrobbles', font: { color: DIM, size: 11 } } },
+    margin: { t: 40, r: 16, b: 50, l: 60 },
+    annotations: [{
+      x: 0.98, y: 0.97, xref: 'paper', yref: 'paper', xanchor: 'right', yanchor: 'top',
+      text: `Pearson r = ${r.toFixed(2)}`,
+      showarrow: false,
+      font: { color: DIM, size: 12 },
+      bgcolor: 'rgba(0,0,0,0.4)',
+    }],
+  }), CFG);
+
+  // 5a. By Category
+  const byCat = (FS.by_category || []).slice(0, 14);
+  const catLabels = byCat.map(d => CAT_LABELS[d.cat] || d.cat);
+  Plotly.newPlot('chart-fs-category', [
+    {
+      x: byCat.map(d => d.plays), y: catLabels,
+      type: 'bar', orientation: 'h',
+      marker: { color: ACCENT },
+      hovertemplate: '%{y}: %{x:,}<extra></extra>',
+    },
+  ], L({
+    margin: { t: 16, r: 16, b: 40, l: 130 },
+    xaxis: { gridcolor: GRID, zerolinecolor: GRID },
+    yaxis: { gridcolor: GRID, zerolinecolor: GRID, automargin: true },
+  }), CFG);
+
+  // 5b. By Country
+  const byCountry = (FS.by_country || []).slice(0, 15);
+  Plotly.newPlot('chart-fs-country', [
+    {
+      x: byCountry.map(d => d.plays),
+      y: byCountry.map(d => `${_ccFlag(d.country_code)} ${d.country || d.country_code}`),
+      type: 'bar', orientation: 'h',
+      marker: { color: '#5b9bd5' },
+      hovertemplate: '%{y}: %{x:,}<extra></extra>',
+    },
+  ], L({
+    margin: { t: 16, r: 16, b: 40, l: 140 },
+    xaxis: { gridcolor: GRID, zerolinecolor: GRID },
+    yaxis: { gridcolor: GRID, zerolinecolor: GRID, automargin: true },
+  }), CFG);
+
+  // 6a. By City bar
+  const byCity = (FS.by_city || []).slice(0, 20);
+  Plotly.newPlot('chart-fs-city', [
+    {
+      x: byCity.map(d => d.plays), y: byCity.map(d => d.city),
+      type: 'bar', orientation: 'h',
+      marker: { color: '#c77dff' },
+      hovertemplate: '%{y}: %{x:,}<extra></extra>',
+    },
+  ], L({
+    margin: { t: 16, r: 16, b: 40, l: 130 },
+    xaxis: { gridcolor: GRID, zerolinecolor: GRID },
+    yaxis: { gridcolor: GRID, zerolinecolor: GRID, automargin: true },
+  }), CFG);
+
+  // 6b. City map
+  const mapCities = (FS.by_city || []).filter(d => d.lat && d.lng);
+  Plotly.newPlot('chart-fs-city-map', [
+    {
+      type: 'scattergeo',
+      lat: mapCities.map(d => d.lat),
+      lon: mapCities.map(d => d.lng),
+      text: mapCities.map(d => `${d.city}: ${(d.plays||0).toLocaleString()} plays`),
+      mode: 'markers',
+      marker: {
+        size: mapCities.map(d => Math.max(5, Math.min(30, Math.sqrt(d.plays || 1) * 1.5))),
+        color: ACCENT, opacity: 0.8,
+        line: { color: '#333', width: 0.5 },
+      },
+      hovertemplate: '%{text}<extra></extra>',
+    },
+  ], {
+    paper_bgcolor: CARD_BG,
+    margin: { t: 8, r: 8, b: 8, l: 8 },
+    geo: {
+      projection: { type: 'natural earth' },
+      bgcolor: CARD_BG,
+      landcolor: '#2a2a2a',
+      oceancolor: '#1a1a1a',
+      showocean: true,
+      showland: true,
+      showcoastlines: true,
+      coastlinecolor: '#444',
+      showcountries: true,
+      countrycolor: '#333',
+      showframe: false,
+      lakecolor: '#1a1a1a',
+    },
+    font: { color: DIM, family: FONT, size: 11 },
+    hoverlabel: { bgcolor: '#333', bordercolor: '#555', font: { color: '#fff', family: FONT } },
+  }, CFG);
+
+  // 7. Venue plays (attributed scrobbles)
+  const vp = (FS.venue_plays || []).slice(0, 20);
+  Plotly.newPlot('chart-fs-venue-plays', [
+    {
+      x: vp.map(d => d.plays), y: vp.map(d => d.name),
+      type: 'bar', orientation: 'h',
+      marker: { color: ACCENT },
+      hovertemplate: '<b>%{y}</b><br>%{x:,} scrobbles<extra></extra>',
+    },
+  ], L({
+    margin: { t: 16, r: 16, b: 40, l: 200 },
+    xaxis: { gridcolor: GRID, zerolinecolor: GRID },
+    yaxis: { gridcolor: GRID, zerolinecolor: GRID, automargin: true },
+  }), CFG);
+
+  // 8. Venue artists table
+  const vpTable = (FS.venue_plays || []).slice(0, 15);
+  if (vpTable.length) {
+    let html = `<table class="sessions-table"><thead><tr>
+      <th>Venue</th><th>City</th><th>Category</th><th>Plays</th><th>Check-ins</th><th>Top Artists</th>
+    </tr></thead><tbody>`;
+    for (const v of vpTable) {
+      const artists = (v.top_artists || []).map(a =>
+        `<span class="plays-pill">${a.artist} <small style="color:#666">${a.count}</small></span>`
+      ).join('');
+      html += `<tr>
+        <td style="color:#fff;font-weight:500">${v.name}</td>
+        <td>${v.city||'—'}</td>
+        <td>${CAT_LABELS[v.category]||v.category||'—'}</td>
+        <td>${(v.plays||0).toLocaleString()}</td>
+        <td>${(v.checkins||0).toLocaleString()}</td>
+        <td>${artists}</td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    document.getElementById('fs-venue-artists').innerHTML = html;
+  }
+
+  // 9. Top venues by checkin count
+  const tv = (FS.top_venues || []).slice(0, 30);
+  Plotly.newPlot('chart-fs-venues', [
+    {
+      x: tv.map(d => d.count), y: tv.map(d => d.name),
+      type: 'bar', orientation: 'h',
+      marker: { color: '#ffb347' },
+      hovertemplate: '<b>%{y}</b><br>%{x:,} check-ins<extra></extra>',
+    },
+  ], L({
+    margin: { t: 16, r: 16, b: 40, l: 200 },
+    xaxis: { gridcolor: GRID, zerolinecolor: GRID },
+    yaxis: { gridcolor: GRID, zerolinecolor: GRID, automargin: true },
+  }), CFG);
+
+  // 10. Trips table
+  const trips = (FS.trips || []).slice().sort((a, b) => (b.start||'').localeCompare(a.start||''));
+  window._tripsData = trips;
+  window._tripsSortKey = 'start';
+  window._tripsSortAsc = false;
+
+  window._sortTrips = function(key) {
+    if (window._tripsSortKey === key) {
+      window._tripsSortAsc = !window._tripsSortAsc;
+    } else {
+      window._tripsSortKey = key;
+      window._tripsSortAsc = false;
+    }
+    _renderTripsTable(window._tripsData);
+  };
+
+  function _renderTripsTable(data) {
+    const key = window._tripsSortKey;
+    const asc = window._tripsSortAsc;
+    const sorted = data.slice().sort((a, b) => {
+      const va = a[key], vb = b[key];
+      if (typeof va === 'number') return asc ? va - vb : vb - va;
+      return asc ? String(va||'').localeCompare(String(vb||'')) : String(vb||'').localeCompare(String(va||''));
+    });
+
+    let html = `<table class="sessions-table"><thead><tr>
+      <th onclick="window._sortTrips('start')">Date</th>
+      <th onclick="window._sortTrips('destination')">Destination</th>
+      <th onclick="window._sortTrips('days')">Days</th>
+      <th onclick="window._sortTrips('plays')">Plays</th>
+      <th onclick="window._sortTrips('checkins')">Check-ins</th>
+      <th onclick="window._sortTrips('music_score')">&#9835; Score</th>
+      <th>Top Artists</th>
+    </tr></thead><tbody>`;
+
+    for (const t of sorted) {
+      const flags = (t.ccs||[]).map(cc => _ccFlag(cc)).join(' ');
+      const scoreClass = t.music_score >= 7 ? 'score-green' : t.music_score >= 4 ? 'score-white' : 'score-dim';
+      const artists = (t.top_artists||[]).slice(0,3).map(a =>
+        `<span class="plays-pill">${a.artist}</span>`
+      ).join('');
+      const trackLine = t.top_track
+        ? `<div style="font-size:.75rem;color:#666;margin-top:4px">&#9835; ${t.top_track}</div>` : '';
+      html += `<tr>
+        <td style="color:#fff;white-space:nowrap">${t.start||''}${t.end && t.end !== t.start ? ` – ${t.end}` : ''}</td>
+        <td>${flags} ${t.destination||'—'}</td>
+        <td>${t.days||0}</td>
+        <td>${(t.plays||0).toLocaleString()}</td>
+        <td>${(t.checkins||0).toLocaleString()}</td>
+        <td><span class="${scoreClass}">${t.music_score||0}</span></td>
+        <td>${artists}${trackLine}</td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    document.getElementById('fs-trips-table').innerHTML = html;
+  }
+
+  if (trips.length) {
+    _renderTripsTable(trips);
+  } else {
+    document.getElementById('fs-trips-table').innerHTML =
+      '<p style="color:var(--text-dim);padding:16px">No trips detected.</p>';
+  }
+
+  // 11. Travel artists lift
+  const ta = (FS.travel_artists || []).slice(0, 20);
+  if (ta.length) {
+    Plotly.newPlot('chart-fs-travel-artists', [
+      {
+        x: ta.map(d => d.lift), y: ta.map(d => d.artist),
+        type: 'bar', orientation: 'h',
+        marker: { color: ta.map(d => d.lift > 2 ? '#e05c5c' : ACCENT) },
+        hovertemplate: '<b>%{y}</b><br>Lift: %{x:.2f}x<br>Travel: %{customdata[0]:,} · Home: %{customdata[1]:,}<extra></extra>',
+        customdata: ta.map(d => [d.travel_plays, d.home_plays]),
+      },
+    ], L({
+      margin: { t: 16, r: 16, b: 40, l: 160 },
+      xaxis: { gridcolor: GRID, zerolinecolor: GRID, title: { text: 'Lift ratio (travel share / home share)', font: { color: DIM, size: 11 } } },
+      yaxis: { gridcolor: GRID, zerolinecolor: GRID, automargin: true },
+    }), CFG);
+  }
+}
+
+// ── Data injection & init ─────────────────────────────────────────────────────
+/* DATA_INJECT_POINT */
+const DASHBOARD_DATA = null;
+/* END_DATA_INJECT */
+
+D = DASHBOARD_DATA;
+if (D) {
+  const FS = D.foursquare || {};
+  document.getElementById('header-sub').textContent =
+    `Home: ${FS.home || 'unknown'} · ${(FS.total||0).toLocaleString()} check-ins · ${(D.total_plays||0).toLocaleString()} scrobbles`;
+  document.getElementById('fs-top-stats').innerHTML = [
+    `<div class="stat-card"><span class="value">${(FS.total||0).toLocaleString()}</span><span class="label">Total Check-ins</span></div>`,
+    `<div class="stat-card"><span class="value">${(FS.unique_venues||0).toLocaleString()}</span><span class="label">Unique Venues</span></div>`,
+    `<div class="stat-card"><span class="value">${(FS.attributed_plays||0).toLocaleString()} <small style="font-size:.6em;font-weight:400">${FS.attributed_pct||0}%</small></span><span class="label">Attributed Scrobbles</span></div>`,
+    `<div class="stat-card"><span class="value">${FS.home||'—'}</span><span class="label">Home City</span></div>`,
+  ].join('');
+  renderFoursquare();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# musicbrain configuration
+# Copy this file to config.py and fill in your paths.
+
+# ── Last.fm ───────────────────────────────────────────────────────────────────
+# Export your scrobble history at: https://benjaminbenben.com/lastfm-to-csv/
+# Set this to the path of the downloaded CSV file.
+LASTFM_EXPORT_FILE = ""  # e.g. "./my-lastfm-export.csv"
+
+# ── Foursquare ────────────────────────────────────────────────────────────────
+# Download your data at: https://foursquare.com/download-my-data
+# Set to the path of your extracted export folder (containing checkins*.json)
+FOURSQUARE_EXPORT_DIR = ""  # e.g. "./my-foursquare-export"
+
+# ── Data directory ────────────────────────────────────────────────────────────
+# Where all intermediate and output files are stored.
+DATA_DIR = "./data"
