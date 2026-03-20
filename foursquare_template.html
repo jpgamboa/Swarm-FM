@@ -4,53 +4,90 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>swarmfm — Last.fm × Swarm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <style>
   :root {
-    --bg: #111111;
-    --card: #1c1c1c;
-    --card2: #222222;
-    --accent: #1ed760;
-    --text: #ffffff;
-    --text-dim: #b3b3b3;
-    --text-faint: #444;
-    --border: #2a2a2a;
-    --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --bg: #0c0c10;
+    --card: #141418;
+    --card2: #1a1a20;
+    --accent: #c8ff00;
+    --accent-dim: rgba(200,255,0,.12);
+    --warm: #ff6b35;
+    --text: #e8e8ec;
+    --text-dim: #8a8a8e;
+    --text-faint: #3a3a42;
+    --border: #1e1e24;
+    --border-light: #2a2a32;
+    --font-display: 'Instrument Serif', Georgia, serif;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+  body {
+    background: var(--bg); color: var(--text); font-family: var(--font-body);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(200,255,0,.04), transparent),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(255,107,53,.03), transparent);
+  }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 
   header {
-    padding: 48px 32px 32px;
+    padding: 56px 32px 36px;
     border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp .6s ease-out;
   }
-  header h1 { font-size: 2.4rem; font-weight: 700; letter-spacing: -0.03em; }
+  header::after {
+    content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: .3;
+  }
+  header h1 {
+    font-family: var(--font-display); font-size: 2.8rem; font-weight: 400;
+    letter-spacing: -0.02em; line-height: 1.1;
+  }
   header h1 span { color: var(--accent); }
-  header p { color: var(--text-dim); margin-top: 8px; font-size: 1rem; }
+  header p { color: var(--text-dim); margin-top: 10px; font-size: 0.95rem; font-weight: 300; }
 
-  main { max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; }
+  main { max-width: 1200px; margin: 0 auto; padding: 36px 24px 72px; }
 
   .stats-row {
-    display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 32px;
+    display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 36px;
+    animation: fadeUp .6s ease-out .1s both;
   }
   .stat-card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-    padding: 20px 24px; flex: 1; min-width: 160px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 22px 24px; flex: 1; min-width: 160px;
     display: flex; flex-direction: column; gap: 6px;
+    backdrop-filter: blur(12px);
+    transition: border-color .2s, box-shadow .2s;
   }
-  .stat-card .value { font-size: 1.7rem; font-weight: 700; color: var(--text); }
-  .stat-card .label { font-size: 0.78rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat-card:hover {
+    border-color: var(--border-light);
+    box-shadow: 0 4px 24px rgba(200,255,0,.04);
+  }
+  .stat-card .value { font-size: 1.7rem; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+  .stat-card .label { font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
 
   .section-title {
-    font-size: 1.15rem; font-weight: 600; margin: 40px 0 4px;
-    color: var(--text);
+    font-family: var(--font-display); font-size: 1.35rem; font-weight: 400;
+    margin: 48px 0 4px; color: var(--text);
   }
-  .section-sub { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 14px; }
+  .section-sub { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 14px; font-weight: 300; }
 
   .chart-card {
     background: var(--card); border: 1px solid var(--border);
-    border-radius: 12px; padding: 16px; overflow: hidden;
+    border-radius: 14px; padding: 18px; overflow: hidden;
+    backdrop-filter: blur(12px);
+    transition: border-color .2s;
   }
+  .chart-card:hover { border-color: var(--border-light); }
   .chart-row {
     display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;
   }
@@ -59,52 +96,67 @@
   .records-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 12px; margin-bottom: 16px;
+    animation: fadeUp .6s ease-out .15s both;
   }
   .record-card {
-    background: var(--card2); border: 1px solid var(--border); border-radius: 10px;
-    padding: 14px 16px;
+    background: var(--card2); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 18px;
+    transition: border-color .2s, transform .2s;
   }
-  .record-card .rc-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .record-card:hover { border-color: var(--border-light); transform: translateY(-2px); }
+  .record-card .rc-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; font-weight: 500; }
   .record-card .rc-value { font-size: 1.1rem; font-weight: 600; color: var(--text); }
-  .record-card .rc-sub { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
+  .record-card .rc-sub { font-size: 0.78rem; color: var(--text-dim); margin-top: 3px; }
 
   .sessions-table {
-    width: 100%; border-collapse: collapse; font-size: 0.875rem;
+    width: 100%; border-collapse: collapse; font-size: 0.85rem;
   }
   .sessions-table th {
-    text-align: left; padding: 8px 12px; color: var(--text-dim);
-    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+    text-align: left; padding: 10px 12px; color: var(--text-dim);
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500;
     border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;
+    transition: color .15s;
   }
   .sessions-table th:hover { color: var(--accent); }
   .sessions-table td {
-    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    padding: 11px 12px; border-bottom: 1px solid var(--border);
     vertical-align: top; color: var(--text-dim);
   }
   .sessions-table td:first-child { color: var(--text); }
+  .sessions-table tbody tr { transition: background .15s; }
   .sessions-table tbody tr:hover td { background: var(--card2); }
 
   .plays-pill {
     display: inline-block; background: var(--card2);
     border: 1px solid var(--border); border-radius: 20px;
-    padding: 2px 10px; font-size: 0.78rem; color: var(--text-dim);
-    margin: 2px 2px 0 0;
+    padding: 3px 11px; font-size: 0.75rem; color: var(--text-dim);
+    margin: 2px 3px 0 0; transition: border-color .15s;
   }
-  .score-green { color: #1ed760; font-weight: 700; }
+  .plays-pill:hover { border-color: var(--accent); }
+  .score-green { color: var(--accent); font-weight: 700; }
   .score-white { color: #ffffff; font-weight: 600; }
   .score-dim   { color: var(--text-dim); }
 
   footer {
-    text-align: center; padding: 32px 16px;
-    color: var(--text-faint); font-size: 0.8rem;
+    text-align: center; padding: 36px 16px;
+    color: var(--text-faint); font-size: 0.78rem;
     border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    letter-spacing: 0.02em;
   }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 </style>
 </head>
 <body>
 
 <header>
   <h1>Last.fm <span>× Swarm</span></h1>
+  <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--text-faint);margin-top:14px;letter-spacing:.1em;text-transform:uppercase">swarmfm</div>
   <p id="header-sub">Loading...</p>
 </header>
 
@@ -193,8 +245,8 @@
 
 <script>
 // ── Plotly theme ──────────────────────────────────────────────────────────────
-const CARD_BG = '#1c1c1c', ACCENT = '#1ed760', DIM = '#b3b3b3';
-const FONT = 'system-ui,-apple-system,sans-serif', GRID = '#2a2a2a';
+const CARD_BG = '#141418', ACCENT = '#c8ff00', DIM = '#8a8a8e';
+const FONT = 'DM Sans,sans-serif', GRID = '#1e1e24';
 const BASE = {
   paper_bgcolor: CARD_BG, plot_bgcolor: CARD_BG,
   font: { color: DIM, family: FONT, size: 12 },
@@ -202,7 +254,7 @@ const BASE = {
   xaxis: { gridcolor: GRID, zerolinecolor: GRID },
   yaxis: { gridcolor: GRID, zerolinecolor: GRID },
   showlegend: false,
-  hoverlabel: { bgcolor: '#333', bordercolor: '#555', font: { color: '#fff', family: FONT } },
+  hoverlabel: { bgcolor: '#1a1a20', bordercolor: '#2a2a32', font: { color: '#fff', family: FONT } },
 };
 const CFG = { responsive: true, displayModeBar: false };
 function L(o = {}) { return Object.assign({}, BASE, o); }
@@ -276,7 +328,7 @@ function renderFoursquare() {
     {
       x: allMonths, y: allMonths.map(m => ckMap[m] || 0),
       type: 'scatter', mode: 'lines', name: 'Check-ins',
-      line: { color: '#e05c5c', width: 2, dash: 'dot' },
+      line: { color: '#ff6b35', width: 2, dash: 'dot' },
       yaxis: 'y2',
       hovertemplate: '%{x}: %{y:,} check-ins<extra></extra>',
     },
@@ -287,7 +339,7 @@ function renderFoursquare() {
     yaxis: { gridcolor: GRID, zerolinecolor: GRID, title: { text: 'Scrobbles', font: { color: ACCENT, size: 11 } } },
     yaxis2: {
       overlaying: 'y', side: 'right', gridcolor: GRID, zerolinecolor: GRID,
-      title: { text: 'Check-ins', font: { color: '#e05c5c', size: 11 } },
+      title: { text: 'Check-ins', font: { color: '#ff6b35', size: 11 } },
     },
     margin: { t: 16, r: 60, b: 60, l: 50 },
   }), CFG);
@@ -309,7 +361,7 @@ function renderFoursquare() {
     },
     {
       x: DAYS, y: fsDowPct, type: 'bar', name: 'Check-ins %',
-      marker: { color: '#e05c5c' },
+      marker: { color: '#ff6b35' },
       hovertemplate: '%{x}: %{y:.1f}%<extra>Check-ins</extra>',
     },
   ], L({
@@ -341,7 +393,7 @@ function renderFoursquare() {
       text: `Pearson r = ${r.toFixed(2)}`,
       showarrow: false,
       font: { color: DIM, size: 12 },
-      bgcolor: 'rgba(0,0,0,0.4)',
+      bgcolor: 'rgba(20,20,24,0.7)',
     }],
   }), CFG);
 
@@ -368,7 +420,7 @@ function renderFoursquare() {
       x: byCountry.map(d => d.plays),
       y: byCountry.map(d => `${_ccFlag(d.country_code)} ${d.country || d.country_code}`),
       type: 'bar', orientation: 'h',
-      marker: { color: '#5b9bd5' },
+      marker: { color: '#60a5fa' },
       hovertemplate: '%{y}: %{x:,}<extra></extra>',
     },
   ], L({
@@ -383,7 +435,7 @@ function renderFoursquare() {
     {
       x: byCity.map(d => d.plays), y: byCity.map(d => d.city),
       type: 'bar', orientation: 'h',
-      marker: { color: '#c77dff' },
+      marker: { color: '#a78bfa' },
       hovertemplate: '%{y}: %{x:,}<extra></extra>',
     },
   ], L({
@@ -404,7 +456,7 @@ function renderFoursquare() {
       marker: {
         size: mapCities.map(d => Math.max(5, Math.min(30, Math.sqrt(d.plays || 1) * 1.5))),
         color: ACCENT, opacity: 0.8,
-        line: { color: '#333', width: 0.5 },
+        line: { color: '#1e1e24', width: 0.5 },
       },
       hovertemplate: '%{text}<extra></extra>',
     },
@@ -414,19 +466,19 @@ function renderFoursquare() {
     geo: {
       projection: { type: 'natural earth' },
       bgcolor: CARD_BG,
-      landcolor: '#2a2a2a',
-      oceancolor: '#1a1a1a',
+      landcolor: '#1e1e24',
+      oceancolor: '#0c0c10',
       showocean: true,
       showland: true,
       showcoastlines: true,
-      coastlinecolor: '#444',
+      coastlinecolor: '#2a2a32',
       showcountries: true,
-      countrycolor: '#333',
+      countrycolor: '#1e1e24',
       showframe: false,
-      lakecolor: '#1a1a1a',
+      lakecolor: '#0c0c10',
     },
     font: { color: DIM, family: FONT, size: 11 },
-    hoverlabel: { bgcolor: '#333', bordercolor: '#555', font: { color: '#fff', family: FONT } },
+    hoverlabel: { bgcolor: '#1a1a20', bordercolor: '#2a2a32', font: { color: '#fff', family: FONT } },
   }, CFG);
 
   // 7. Venue plays (attributed scrobbles)
@@ -452,7 +504,7 @@ function renderFoursquare() {
     </tr></thead><tbody>`;
     for (const v of vpTable) {
       const artists = (v.top_artists || []).map(a =>
-        `<span class="plays-pill">${a.artist} <small style="color:#666">${a.count}</small></span>`
+        `<span class="plays-pill">${a.artist} <small style="color:#5a5a62">${a.count}</small></span>`
       ).join('');
       html += `<tr>
         <td style="color:#fff;font-weight:500">${v.name}</td>
@@ -473,7 +525,7 @@ function renderFoursquare() {
     {
       x: tv.map(d => d.count), y: tv.map(d => d.name),
       type: 'bar', orientation: 'h',
-      marker: { color: '#ffb347' },
+      marker: { color: '#fbbf24' },
       hovertemplate: '<b>%{y}</b><br>%{x:,} check-ins<extra></extra>',
     },
   ], L({
@@ -524,7 +576,7 @@ function renderFoursquare() {
         `<span class="plays-pill">${a.artist}</span>`
       ).join('');
       const trackLine = t.top_track
-        ? `<div style="font-size:.75rem;color:#666;margin-top:4px">&#9835; ${t.top_track}</div>` : '';
+        ? `<div style="font-size:.75rem;color:#5a5a62;margin-top:4px">&#9835; ${t.top_track}</div>` : '';
       html += `<tr>
         <td style="color:#fff;white-space:nowrap">${t.start||''}${t.end && t.end !== t.start ? ` – ${t.end}` : ''}</td>
         <td>${flags} ${t.destination||'—'}</td>
@@ -553,7 +605,7 @@ function renderFoursquare() {
       {
         x: ta.map(d => d.lift), y: ta.map(d => d.artist),
         type: 'bar', orientation: 'h',
-        marker: { color: ta.map(d => d.lift > 2 ? '#e05c5c' : ACCENT) },
+        marker: { color: ta.map(d => d.lift > 2 ? '#ff6b35' : ACCENT) },
         hovertemplate: '<b>%{y}</b><br>Lift: %{x:.2f}x<br>Travel: %{customdata[0]:,} · Home: %{customdata[1]:,}<extra></extra>',
         customdata: ta.map(d => [d.travel_plays, d.home_plays]),
       },
