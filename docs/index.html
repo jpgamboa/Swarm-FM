@@ -174,6 +174,75 @@ h1 span { color: var(--accent); }
 }
 .home-row .remove-btn:hover { color: var(--warm); }
 
+/* ── Preview charts ────────────────────────────────────────────── */
+.preview-charts {
+  margin: 16px 0; animation: fadeUp .4s ease-out;
+}
+.preview-label {
+  font-family: var(--font-mono); font-size: 0.68rem; color: var(--accent);
+  text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px;
+}
+.preview-grid {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.preview-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px;
+}
+.preview-title {
+  font-family: var(--font-display); font-size: 0.88rem; font-weight: 400;
+  margin-bottom: 10px; color: var(--text);
+}
+.preview-timeline {
+  display: flex; align-items: flex-end; gap: 1px; height: 54px;
+}
+.preview-timeline .bar {
+  flex: 1; min-width: 1px; background: var(--accent); border-radius: 1px 1px 0 0;
+  opacity: 0.75;
+}
+.preview-timeline-labels {
+  display: flex; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-faint);
+  margin-top: 4px;
+}
+.preview-artist-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+  font-size: 0.75rem;
+}
+.preview-artist-row .name {
+  width: 110px; text-align: right; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim);
+  flex-shrink: 0;
+}
+.preview-artist-row .bar-wrap {
+  flex: 1; height: 14px; background: var(--card2); border-radius: 3px;
+  overflow: hidden;
+}
+.preview-artist-row .bar {
+  height: 100%; background: var(--accent); border-radius: 3px;
+  opacity: 0.8;
+}
+.preview-artist-row .count {
+  width: 45px; font-family: var(--font-mono); font-size: 0.68rem;
+  color: var(--text-faint);
+}
+.preview-dow {
+  display: flex; align-items: flex-end; gap: 8px; height: 48px;
+}
+.preview-dow .col {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.preview-dow .bar {
+  width: 100%; background: var(--accent); border-radius: 3px 3px 0 0;
+  opacity: 0.75;
+}
+.preview-dow-labels {
+  display: flex; gap: 8px;
+  font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-faint);
+  margin-top: 2px;
+}
+.preview-dow-labels span { flex: 1; text-align: center; }
+
 /* ── Geo facts ticker ──────────────────────────────────────────── */
 .geo-facts {
   margin: 14px 0; padding: 12px 16px;
@@ -316,6 +385,27 @@ iframe#dashboard-frame {
     <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
     <p class="progress-status" id="progress-status">Initializing&hellip;</p>
     <div id="geo-facts" class="geo-facts" style="display:none"></div>
+
+    <!-- Preview charts (shown while geocoding runs) -->
+    <div id="preview-charts" class="preview-charts" style="display:none">
+      <div class="preview-label">Preview &mdash; full dashboard loading</div>
+      <div class="preview-grid">
+        <div class="preview-card">
+          <div class="preview-title">Plays by Month</div>
+          <div id="preview-timeline" class="preview-timeline"></div>
+          <div id="preview-timeline-labels" class="preview-timeline-labels"></div>
+        </div>
+        <div class="preview-card">
+          <div class="preview-title">Top Artists</div>
+          <div id="preview-artists"></div>
+        </div>
+        <div class="preview-card">
+          <div class="preview-title">Day of Week</div>
+          <div id="preview-dow" class="preview-dow"></div>
+          <div id="preview-dow-labels" class="preview-dow-labels"></div>
+        </div>
+      </div>
+    </div>
 
     <!-- Home cities questionnaire (shown during geocoding) -->
     <div id="home-panel" class="home-panel" style="display:none">
@@ -559,6 +649,68 @@ function getManualHomePeriods() {
 
 function hideHomePanel() {
   document.getElementById('home-panel').style.display = 'none';
+}
+
+// ── Preview charts ────────────────────────────────────────────────
+function renderPreviewCharts(scrobbles) {
+  if (!scrobbles || !scrobbles.length) return;
+
+  const monthCounts = {};
+  const dowCounts = [0,0,0,0,0,0,0];
+  const artistCounts = {};
+
+  for (const s of scrobbles) {
+    const ts = s.timestamp;
+    if (!ts) continue;
+    const month = ts.slice(0, 7);
+    if (month.length === 7) monthCounts[month] = (monthCounts[month] || 0) + 1;
+    const dt = new Date(ts);
+    if (!isNaN(dt)) {
+      const dow = (dt.getUTCDay() + 6) % 7; // Mon=0
+      dowCounts[dow]++;
+    }
+    if (s.artist) artistCounts[s.artist] = (artistCounts[s.artist] || 0) + 1;
+  }
+
+  // ── Timeline ──
+  const months = Object.keys(monthCounts).sort();
+  if (months.length > 0) {
+    const maxM = Math.max(...months.map(m => monthCounts[m]));
+    const tlEl = document.getElementById('preview-timeline');
+    tlEl.innerHTML = months.map(m =>
+      `<div class="bar" style="height:${Math.max(2, monthCounts[m] / maxM * 100)}%"></div>`
+    ).join('');
+    const labEl = document.getElementById('preview-timeline-labels');
+    labEl.innerHTML = `<span>${months[0]}</span><span>${months[months.length - 1]}</span>`;
+  }
+
+  // ── Top Artists ──
+  const sorted = Object.entries(artistCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  if (sorted.length > 0) {
+    const maxA = sorted[0][1];
+    const artEl = document.getElementById('preview-artists');
+    artEl.innerHTML = sorted.map(([name, count]) =>
+      `<div class="preview-artist-row">
+        <span class="name" title="${name.replace(/"/g, '&quot;')}">${name}</span>
+        <div class="bar-wrap"><div class="bar" style="width:${count / maxA * 100}%"></div></div>
+        <span class="count">${count.toLocaleString()}</span>
+      </div>`
+    ).join('');
+  }
+
+  // ── Day of Week ──
+  const maxD = Math.max(...dowCounts);
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  if (maxD > 0) {
+    const dowEl = document.getElementById('preview-dow');
+    dowEl.innerHTML = dowCounts.map((c, i) =>
+      `<div class="col"><div class="bar" style="height:${Math.max(4, c / maxD * 100)}%"></div></div>`
+    ).join('');
+    const dlEl = document.getElementById('preview-dow-labels');
+    dlEl.innerHTML = days.map(d => `<span>${d}</span>`).join('');
+  }
+
+  document.getElementById('preview-charts').style.display = 'block';
 }
 
 // ── Geo facts ticker ───────────────────────────────────────────────
@@ -1051,8 +1203,8 @@ async function runPipeline() {
   uploadSection.style.display = 'none';
   progressSection.style.display = 'block';
   logEl.textContent = '';
-  // Pre-load seed and start facts while pipeline runs
-  _loadGeoSeed().then(seed => { if (Object.keys(seed).length) startGeoFacts(seed); });
+  // Pre-load seed cache (facts ticker starts during geocoding)
+  _loadGeoSeed();
   showHomePanel();
 
   try {
@@ -1071,8 +1223,50 @@ async function runPipeline() {
     const lfFile = files.find(([, f]) => f.detectedType === 'lastfm' || f.detectedType === 'scrobbles');
     const spFiles = files.filter(([, f]) => f.detectedType === 'spotify');
 
+    // ── Music data (parsed first so preview charts can show during geocoding) ──
+    const hasLastfm = lfFile && (lfFile[1].detectedType === 'lastfm' || lfFile[1].detectedType === 'scrobbles');
+    const hasSpotify = spFiles.length > 0;
+
+    if (hasLastfm) {
+      setProgress(8, 'Processing Last.fm data\u2026');
+      if (lfFile[1].detectedType === 'scrobbles') {
+        pyodide.FS.writeFile('/data/scrobbles.json', lfFile[1].content);
+        log('Loaded pre-processed scrobbles.json');
+      } else {
+        pyodide.FS.writeFile('/data/lastfm_export.csv', lfFile[1].content);
+        pyodide.runPython(PY_PARSE_LASTFM);
+      }
+    }
+
+    if (hasSpotify) {
+      setProgress(10, 'Processing Spotify data\u2026');
+      const allEntries = [];
+      for (const [name, f] of spFiles) {
+        const entries = JSON.parse(f.content);
+        allEntries.push(...entries);
+        log(`  ${name}: ${entries.length.toLocaleString()} entries`);
+      }
+      pyodide.FS.writeFile('/data/raw_spotify.json', JSON.stringify(allEntries));
+      // If Last.fm was also loaded, save it aside before Spotify overwrites
+      if (hasLastfm) {
+        pyodide.FS.writeFile('/data/lastfm_scrobbles.json',
+          pyodide.FS.readFile('/data/scrobbles.json', { encoding: 'utf8' }));
+      }
+      pyodide.runPython(PY_PARSE_SPOTIFY);
+      // Merge Last.fm + Spotify if both present
+      if (hasLastfm) {
+        pyodide.runPython(PY_MERGE_SOURCES);
+      }
+    }
+
+    // ── Preview charts (shown while geocoding runs) ────────────────
+    try {
+      const scrobbleJson = pyodide.FS.readFile('/data/scrobbles.json', { encoding: 'utf8' });
+      renderPreviewCharts(JSON.parse(scrobbleJson));
+    } catch {}
+
     // ── Foursquare ─────────────────────────────────────────────────
-    setProgress(10, 'Processing Foursquare data\u2026');
+    setProgress(15, 'Processing Foursquare data\u2026');
 
     const fsTypes = new Set(fsFiles.map(([, f]) => f.detectedType));
     if (fsTypes.has('checkins') && !fsTypes.has('foursquare_raw')) {
@@ -1099,7 +1293,7 @@ async function runPipeline() {
         pyodide.FS.readFile('/data/needs_geocoding.json', { encoding: 'utf8' })
       );
       if (needsGeo.length > 0) {
-        setProgress(15, `Geocoding ${needsGeo.length} locations\u2026`);
+        setProgress(20, `Geocoding ${needsGeo.length} locations\u2026`);
         const airportVenues = JSON.parse(
           pyodide.FS.readFile('/data/airport_venues.json', { encoding: 'utf8' })
         );
@@ -1108,42 +1302,6 @@ async function runPipeline() {
         stopGeoFacts();
         pyodide.FS.writeFile('/data/geo_results.json', JSON.stringify(geoResults));
         pyodide.runPython(PY_APPLY_GEOCODING);
-      }
-    }
-
-    // ── Music data (Last.fm, Spotify, or both) ────────────────────
-    const hasLastfm = lfFile && (lfFile[1].detectedType === 'lastfm' || lfFile[1].detectedType === 'scrobbles');
-    const hasSpotify = spFiles.length > 0;
-
-    if (hasLastfm) {
-      setProgress(42, 'Processing Last.fm data\u2026');
-      if (lfFile[1].detectedType === 'scrobbles') {
-        pyodide.FS.writeFile('/data/scrobbles.json', lfFile[1].content);
-        log('Loaded pre-processed scrobbles.json');
-      } else {
-        pyodide.FS.writeFile('/data/lastfm_export.csv', lfFile[1].content);
-        pyodide.runPython(PY_PARSE_LASTFM);
-      }
-    }
-
-    if (hasSpotify) {
-      setProgress(45, 'Processing Spotify data\u2026');
-      const allEntries = [];
-      for (const [name, f] of spFiles) {
-        const entries = JSON.parse(f.content);
-        allEntries.push(...entries);
-        log(`  ${name}: ${entries.length.toLocaleString()} entries`);
-      }
-      pyodide.FS.writeFile('/data/raw_spotify.json', JSON.stringify(allEntries));
-      // If Last.fm was also loaded, save it aside before Spotify overwrites
-      if (hasLastfm) {
-        pyodide.FS.writeFile('/data/lastfm_scrobbles.json',
-          pyodide.FS.readFile('/data/scrobbles.json', { encoding: 'utf8' }));
-      }
-      pyodide.runPython(PY_PARSE_SPOTIFY);
-      // Merge Last.fm + Spotify if both present
-      if (hasLastfm) {
-        pyodide.runPython(PY_MERGE_SOURCES);
       }
     }
 

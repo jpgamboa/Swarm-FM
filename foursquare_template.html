@@ -163,7 +163,88 @@
 <main>
   <div class="stats-row" id="fs-top-stats"></div>
 
+  <!-- ═══════ FOURSQUARE ═════════════════════════════════════════════════ -->
+
+  <!-- 1. Stats overview -->
+  <div class="section-title">Foursquare Overview</div>
+  <div class="section-sub">Your Foursquare history at a glance</div>
+  <div class="records-grid" id="fs-stats"></div>
+
+  <!-- 2. Timeline -->
+  <div class="section-title">Listening vs Going Out</div>
+  <div class="section-sub">Monthly scrobbles and check-ins over time</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div id="chart-fs-timeline" style="height:280px"></div>
+  </div>
+
+  <!-- 3. Day of Week -->
+  <div class="section-title">Day-of-Week Patterns</div>
+  <div class="section-sub">When you go out vs when you listen, normalized to %</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div id="chart-fs-dow" style="height:260px"></div>
+  </div>
+
+  <!-- 4. Scatter -->
+  <div class="section-title">More Check-ins = More Music?</div>
+  <div class="section-sub">Monthly check-in count vs scrobble count — is there a correlation?</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div id="chart-fs-scatter" style="height:280px"></div>
+  </div>
+
+  <!-- 5. Category + Country -->
+  <div class="section-title">Listens by Venue Type &amp; Country</div>
+  <div class="section-sub" id="fs-attr-sub">Scrobbles attributed to a Foursquare check-in</div>
+  <div class="chart-row" style="margin-bottom:0">
+    <div class="chart-card"><div id="chart-fs-category" style="height:300px"></div></div>
+    <div class="chart-card"><div id="chart-fs-country" style="height:300px"></div></div>
+  </div>
+
+  <!-- 6. City bar + map -->
+  <div class="section-title">Listens by City</div>
+  <div class="section-sub">Where in the world were you listening?</div>
+  <div class="chart-row" style="margin-bottom:0">
+    <div class="chart-card"><div id="chart-fs-city" style="height:320px"></div></div>
+    <div class="chart-card"><div id="chart-fs-city-map" style="height:320px"></div></div>
+  </div>
+
+  <!-- 7. Venue plays -->
+  <div class="section-title">Where Were You Listening?</div>
+  <div class="section-sub">Venues ranked by attributed scrobbles</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div id="chart-fs-venue-plays" style="height:340px"></div>
+  </div>
+
+  <!-- 8. Venue artists table -->
+  <div class="section-title">What Were You Listening To There?</div>
+  <div class="section-sub">Top venues with their most-played artists</div>
+  <div class="chart-card" style="margin-bottom:16px; overflow-x:auto">
+    <div id="fs-venue-artists"></div>
+  </div>
+
+  <!-- 9. Top venues by checkin -->
+  <div class="section-title">Your Most Visited Places</div>
+  <div class="section-sub">Top 30 venues by check-in count</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div id="chart-fs-venues" style="height:400px"></div>
+  </div>
+
+  <!-- 10. Trips table -->
+  <div class="section-title">Trips &amp; Their Vibes</div>
+  <div class="section-sub">Away-from-home periods detected from your check-in history</div>
+  <div class="chart-card" style="margin-bottom:16px; overflow-x:auto">
+    <div id="fs-trips-table"></div>
+  </div>
+
+  <!-- 11. Travel artists -->
+  <div class="section-title">Travel Artists</div>
+  <div class="section-sub">Artists you listen to more while travelling vs at home (lift ratio)</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div id="chart-fs-travel-artists" style="height:340px"></div>
+  </div>
+
   <!-- ═══════ LISTENING HISTORY ═══════════════════════════════════════════ -->
+  <div style="border-top:1px solid var(--border);margin:48px 0 0"></div>
+
   <div class="section-title">Personal Records</div>
   <div class="section-sub" id="lh-records-sub">Your listening history at a glance</div>
   <div class="records-grid" id="lh-records"></div>
@@ -266,86 +347,6 @@
         <div class="chart-card"><div id="chart-sp-skip-hour" style="height:280px"></div></div>
       </div>
     </div>
-  </div>
-
-  <!-- ═══════ FOURSQUARE ═════════════════════════════════════════════════ -->
-  <div style="border-top:1px solid var(--border);margin:48px 0 0"></div>
-
-  <!-- 1. Stats overview -->
-  <div class="section-title">Foursquare Overview</div>
-  <div class="section-sub">Your Foursquare history at a glance</div>
-  <div class="records-grid" id="fs-stats"></div>
-
-  <!-- 2. Timeline -->
-  <div class="section-title">Listening vs Going Out</div>
-  <div class="section-sub">Monthly scrobbles and check-ins over time</div>
-  <div class="chart-card" style="margin-bottom:16px">
-    <div id="chart-fs-timeline" style="height:280px"></div>
-  </div>
-
-  <!-- 3. Day of Week -->
-  <div class="section-title">Day-of-Week Patterns</div>
-  <div class="section-sub">When you go out vs when you listen, normalized to %</div>
-  <div class="chart-card" style="margin-bottom:16px">
-    <div id="chart-fs-dow" style="height:260px"></div>
-  </div>
-
-  <!-- 4. Scatter -->
-  <div class="section-title">More Check-ins = More Music?</div>
-  <div class="section-sub">Monthly check-in count vs scrobble count — is there a correlation?</div>
-  <div class="chart-card" style="margin-bottom:16px">
-    <div id="chart-fs-scatter" style="height:280px"></div>
-  </div>
-
-  <!-- 5. Category + Country -->
-  <div class="section-title">Listens by Venue Type &amp; Country</div>
-  <div class="section-sub" id="fs-attr-sub">Scrobbles attributed to a Foursquare check-in</div>
-  <div class="chart-row" style="margin-bottom:0">
-    <div class="chart-card"><div id="chart-fs-category" style="height:300px"></div></div>
-    <div class="chart-card"><div id="chart-fs-country" style="height:300px"></div></div>
-  </div>
-
-  <!-- 6. City bar + map -->
-  <div class="section-title">Listens by City</div>
-  <div class="section-sub">Where in the world were you listening?</div>
-  <div class="chart-row" style="margin-bottom:0">
-    <div class="chart-card"><div id="chart-fs-city" style="height:320px"></div></div>
-    <div class="chart-card"><div id="chart-fs-city-map" style="height:320px"></div></div>
-  </div>
-
-  <!-- 7. Venue plays -->
-  <div class="section-title">Where Were You Listening?</div>
-  <div class="section-sub">Venues ranked by attributed scrobbles</div>
-  <div class="chart-card" style="margin-bottom:16px">
-    <div id="chart-fs-venue-plays" style="height:340px"></div>
-  </div>
-
-  <!-- 8. Venue artists table -->
-  <div class="section-title">What Were You Listening To There?</div>
-  <div class="section-sub">Top venues with their most-played artists</div>
-  <div class="chart-card" style="margin-bottom:16px; overflow-x:auto">
-    <div id="fs-venue-artists"></div>
-  </div>
-
-  <!-- 9. Top venues by checkin -->
-  <div class="section-title">Your Most Visited Places</div>
-  <div class="section-sub">Top 30 venues by check-in count</div>
-  <div class="chart-card" style="margin-bottom:16px">
-    <div id="chart-fs-venues" style="height:400px"></div>
-  </div>
-
-  <!-- 10. Trips table -->
-  <div class="section-title">Trips &amp; Their Vibes</div>
-  <div class="section-sub">Away-from-home periods detected from your check-in history</div>
-  <div class="chart-card" style="margin-bottom:16px; overflow-x:auto">
-    <div id="fs-trips-table"></div>
-  </div>
-
-  <!-- 11. Travel artists -->
-  <div class="section-title">Travel Artists</div>
-  <div class="section-sub">Artists you listen to more while travelling vs at home (lift ratio)</div>
-  <div class="chart-card" style="margin-bottom:16px">
-    <div id="chart-fs-travel-artists" style="height:340px"></div>
   </div>
 </main>
 
@@ -1014,9 +1015,9 @@ if (D) {
     `<div class="stat-card"><span class="value">${(FS.attributed_plays||0).toLocaleString()} <small style="font-size:.6em;font-weight:400">${FS.attributed_pct||0}%</small></span><span class="label">Attributed Scrobbles</span></div>`,
     `<div class="stat-card"><span class="value">${FS.home||'—'}</span><span class="label">Home City</span></div>`,
   ].join('');
+  renderFoursquare();
   renderListeningHistory();
   renderSpotify();
-  renderFoursquare();
 }
 </script>
 </body>
