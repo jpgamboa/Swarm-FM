@@ -4,6 +4,8 @@ Compare your Last.fm scrobble history against your Foursquare/Swarm checkins —
 
 **What you get:** an interactive dashboard showing where and how you listen to music — attributed scrobbles by venue, venue type, city, and country; a world map of listening hotspots; trip detection with per-trip listening stats; day-of-week and monthly patterns for both plays and checkins; and a travel artist affinity chart showing which artists you reach for on the road.
 
+**[Try it in your browser](https://jpgamboa.github.io/Swarm-FM/)** — no install required, runs entirely client-side.
+
 ## Requirements
 
 - Python 3.8+
