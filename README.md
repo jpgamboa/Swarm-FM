@@ -6,6 +6,45 @@ Compare your Last.fm scrobble history against your Foursquare/Swarm checkins —
 
 **[Try it in your browser](https://jpgamboa.github.io/Swarm-FM/)** — no install required, runs entirely client-side.
 
+## Web App
+
+A browser-based version is available at the project's GitHub Pages site — no Python install needed. Everything runs client-side via [Pyodide](https://pyodide.org/) (Python compiled to WebAssembly).
+
+1. Visit the hosted page (or serve `docs/` locally: `cd docs && python3 -m http.server 8765`)
+2. Drop your Last.fm CSV + Foursquare JSON export
+3. Files are parsed and correlated in your browser
+4. Download the generated dashboard HTML
+
+**To deploy your own instance:** push this repo to GitHub, then go to Settings > Pages > Source: deploy from branch `main`, folder `/docs`.
+
+After editing the source Python files, run `./build_web.sh` to sync them into `docs/`.
+
+## How correlation works
+
+A scrobble is attributed to a venue if it occurred within a **per-category time window** after a checkin. Different venue types get different windows:
+
+| Venue type | Window |
+|---|---|
+| Transit, hotel, work | 4 hours |
+| Coffee shop, bar/brewery | 3 hours |
+| Restaurant, music venue | 1.5 hours |
+| Gym, outdoor | 2 hours |
+| Shopping | 1 hour |
+| Cinema | 30 min |
+| Other | 3 hours |
+
+**Weekday lunch suppression:** restaurant checkins on weekdays between 10am–4pm are not attributed, to avoid false positives from work-adjacent dining.
+
+The most recent matching checkin wins if windows overlap.
+
+**Home city** is inferred automatically as the most frequently checked-in `(city, country)` pair — no manual configuration needed.
+
+**Trips** are detected by finding consecutive days where all checkins are outside your home city. Gaps of up to 7 days are tolerated. Trips must be at least 2 days and have at least 5 scrobbles to appear in the dashboard. Trip type (flight, train, or road) is inferred from venue names during the trip.
+
+**Map:** the dashboard map shows two layers — green dots for cities with attributed music plays, and gray dots for all other visited cities.
+
+## Run Locally
+
 ## Requirements
 
 - Python 3.8+
@@ -73,43 +112,6 @@ Then open `data/dashboard.html` in any browser.
 ## About geocoding
 
 Step 2 reverse-geocodes every checkin's lat/lng coordinates to city + country using the [Nominatim API](https://nominatim.org/) (OpenStreetMap, free, no key required). Results are cached in `data/geo_cache.json`. The first run over a large checkin history (~1,400 unique locations) takes about 25 minutes at Nominatim's 1 req/sec rate limit; all subsequent runs are instant.
-
-## Web version (no install required)
-
-A browser-based version is available at the project's GitHub Pages site — no Python install needed. Everything runs client-side via [Pyodide](https://pyodide.org/) (Python compiled to WebAssembly).
-
-1. Visit the hosted page (or serve `docs/` locally: `cd docs && python3 -m http.server 8765`)
-2. Drop your Last.fm CSV + Foursquare JSON export
-3. Files are parsed and correlated in your browser
-4. Download the generated dashboard HTML
-
-**To deploy your own instance:** push this repo to GitHub, then go to Settings > Pages > Source: deploy from branch `main`, folder `/docs`.
-
-After editing the source Python files, run `./build_web.sh` to sync them into `docs/`.
-
-## How correlation works
-
-A scrobble is attributed to a venue if it occurred within a **per-category time window** after a checkin. Different venue types get different windows:
-
-| Venue type | Window |
-|---|---|
-| Transit, hotel, work | 4 hours |
-| Coffee shop, bar/brewery | 3 hours |
-| Restaurant, music venue | 1.5 hours |
-| Gym, outdoor | 2 hours |
-| Shopping | 1 hour |
-| Cinema | 30 min |
-| Other | 3 hours |
-
-**Weekday lunch suppression:** restaurant checkins on weekdays between 10am–4pm are not attributed, to avoid false positives from work-adjacent dining.
-
-The most recent matching checkin wins if windows overlap.
-
-**Home city** is inferred automatically as the most frequently checked-in `(city, country)` pair — no manual configuration needed.
-
-**Trips** are detected by finding consecutive days where all checkins are outside your home city. Gaps of up to 7 days are tolerated. Trips must be at least 2 days and have at least 5 scrobbles to appear in the dashboard. Trip type (flight, train, or road) is inferred from venue names during the trip.
-
-**Map:** the dashboard map shows two layers — green dots for cities with attributed music plays, and gray dots for all other visited cities.
 
 ## Data privacy
 
