@@ -427,6 +427,7 @@ iframe#dashboard-frame {
         <div id="home-rows"></div>
         <button class="btn btn-secondary" id="home-add-btn" style="font-size:.8rem;padding:6px 12px;margin-top:8px">+ Add city</button>
       </div>
+      <button class="btn btn-primary" id="home-confirm-btn" style="margin-top:14px;width:100%;padding:10px;font-size:.85rem">Continue</button>
     </div>
 
     <div class="log" id="log"></div>
@@ -627,6 +628,10 @@ function showHomePanel() {
   document.getElementById('home-add-btn').addEventListener('click', () => _addHomeRow());
   // Start with one empty row
   _addHomeRow();
+  // Return a promise that resolves when the user clicks Continue
+  return new Promise(resolve => {
+    document.getElementById('home-confirm-btn').addEventListener('click', resolve, { once: true });
+  });
 }
 
 function getManualHomePeriods() {
@@ -1205,7 +1210,7 @@ async function runPipeline() {
   logEl.textContent = '';
   // Pre-load seed cache (facts ticker starts during geocoding)
   _loadGeoSeed();
-  showHomePanel();
+  const homePanelReady = showHomePanel();
 
   try {
     pyodide.setStdout({ batched: msg => log(msg) });
@@ -1305,6 +1310,11 @@ async function runPipeline() {
       }
     }
 
+    // ── Wait for home city choice ─────────────────────────────────
+    await homePanelReady;
+    hideHomePanel();
+    stopGeoFacts();
+
     // ── Correlation ────────────────────────────────────────────────
     setProgress(60, 'Correlating scrobbles with checkins\u2026');
 
@@ -1317,8 +1327,6 @@ async function runPipeline() {
       // Remove any stale manual_home.json so auto-inference runs
       try { pyodide.FS.unlink('/data/manual_home.json'); } catch {}
     }
-    hideHomePanel();
-    stopGeoFacts();
 
     const correlateCode = await fetch('correlate.py').then(r => r.text());
     pyodide.FS.writeFile('/app/correlate.py', correlateCode);
