@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>swarmfm — Generate Your Listening Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c0c10;
+  --card: #141418;
+  --card2: #1a1a20;
+  --accent: #c8ff00;
+  --accent-dim: rgba(200,255,0,.12);
+  --warm: #ff6b35;
+  --text: #e8e8ec;
+  --text-dim: #8a8a8e;
+  --text-faint: #3a3a42;
+  --border: #1e1e24;
+  --border-light: #2a2a32;
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg); color: var(--text); font-family: var(--font-body);
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(200,255,0,.04), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(255,107,53,.03), transparent);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.container {
+  max-width: 640px; width: 100%; margin: 0 auto;
+  padding: 48px 24px; min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+}
+
+h1 {
+  font-family: var(--font-display); font-size: 3rem; font-weight: 400;
+  letter-spacing: -0.02em; margin-bottom: 8px;
+  animation: fadeUp .6s ease-out;
+}
+h1 span { color: var(--accent); }
+
+.subtitle {
+  color: var(--text-dim); font-size: 0.92rem; margin-bottom: 36px;
+  line-height: 1.6; font-weight: 300;
+  animation: fadeUp .6s ease-out .1s both;
+}
+
+/* ── Drop zone ──────────────────────────────────────────────────── */
+.drop-zone {
+  border: 2px dashed var(--border-light); border-radius: 16px;
+  padding: 48px 24px; text-align: center; cursor: pointer;
+  transition: border-color .2s, background .2s;
+  margin-bottom: 20px; position: relative;
+  animation: fadeUp .6s ease-out .15s both;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--accent); background: var(--accent-dim);
+}
+.drop-zone .icon { font-size: 2.5rem; margin-bottom: 12px; }
+.drop-zone p { color: var(--text-dim); font-size: 0.9rem; }
+.drop-zone .hint { font-size: 0.78rem; color: var(--text-faint); margin-top: 8px; }
+.drop-zone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer;
+}
+
+/* ── File list ──────────────────────────────────────────────────── */
+.file-list { margin-bottom: 20px; }
+
+.file-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 10px;
+  margin-bottom: 8px; font-size: 0.85rem;
+  animation: fadeUp .3s ease-out both;
+}
+.file-item .badge {
+  font-family: var(--font-mono); font-size: 0.68rem;
+  padding: 2px 8px; border-radius: 4px;
+  background: var(--accent-dim); color: var(--accent);
+  white-space: nowrap;
+}
+.file-item .badge.warn {
+  background: rgba(255,107,53,.12); color: var(--warm);
+}
+.file-item .name { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-item .size { color: var(--text-dim); font-size: 0.78rem; white-space: nowrap; }
+.file-item .remove {
+  cursor: pointer; color: var(--text-dim); font-size: 1.1rem; padding: 0 4px;
+  transition: color .15s;
+}
+.file-item .remove:hover { color: var(--warm); }
+
+/* ── Buttons ────────────────────────────────────────────────────── */
+.btn {
+  display: block; width: 100%; padding: 14px; border: none; border-radius: 12px;
+  font-family: var(--font-body); font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; transition: opacity .2s, transform .1s;
+}
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.25; cursor: not-allowed; }
+.btn-primary { background: var(--accent); color: #0c0c10; }
+.btn-secondary {
+  background: var(--card); border: 1px solid var(--border); color: var(--text);
+}
+
+/* ── Progress ───────────────────────────────────────────────────── */
+.progress-bar {
+  height: 4px; background: var(--border); border-radius: 2px;
+  margin: 20px 0 12px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; background: var(--accent); border-radius: 2px;
+  width: 0%; transition: width .4s ease-out;
+}
+.progress-status {
+  color: var(--text-dim); font-size: 0.82rem; font-family: var(--font-mono);
+}
+.log {
+  margin-top: 16px; padding: 14px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 10px;
+  max-height: 220px; overflow-y: auto;
+  font-family: var(--font-mono); font-size: 0.72rem;
+  color: var(--text-dim); line-height: 1.7; white-space: pre-wrap;
+}
+
+/* ── Result ─────────────────────────────────────────────────────── */
+.result-bar {
+  display: flex; gap: 10px; margin-bottom: 14px;
+  animation: fadeUp .4s ease-out;
+}
+.result-bar .btn { flex: 1; padding: 10px; font-size: 0.85rem; }
+
+iframe#dashboard-frame {
+  width: 100vw; margin-left: calc(-50vw + 50%);
+  height: 85vh; border: none; background: var(--bg);
+  border-top: 1px solid var(--border);
+  animation: fadeUp .5s ease-out .1s both;
+}
+
+/* ── Pyodide status ─────────────────────────────────────────────── */
+.engine-status {
+  font-size: 0.72rem; color: var(--text-faint); font-family: var(--font-mono);
+  margin-top: 18px; text-align: center;
+}
+.engine-status .dot {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  margin-right: 6px; vertical-align: middle;
+}
+.dot.loading { background: var(--warm); animation: pulse 1.2s ease-in-out infinite; }
+.dot.ready { background: var(--accent); }
+.dot.error { background: #ff4444; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Info cards ─────────────────────────────────────────────────── */
+.info-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin-bottom: 28px;
+  animation: fadeUp .6s ease-out .2s both;
+}
+.info-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px;
+}
+.info-card h3 {
+  font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;
+  letter-spacing: 0.06em; font-weight: 500; margin-bottom: 6px;
+}
+.info-card p { font-size: 0.82rem; color: var(--text); line-height: 1.5; }
+.info-card a { color: var(--accent); text-decoration: none; }
+.info-card a:hover { text-decoration: underline; }
+.info-card code {
+  font-family: var(--font-mono); font-size: 0.75rem;
+  background: var(--card2); padding: 1px 5px; border-radius: 3px;
+}
+
+@media (max-width: 500px) { .info-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="container" id="app">
+
+  <!-- ================================================================== -->
+  <!-- UPLOAD SECTION                                                      -->
+  <!-- ================================================================== -->
+  <div id="upload-section">
+    <h1>swarm<span>fm</span></h1>
+    <p class="subtitle">
+      Correlate your Last.fm listening history with Foursquare/Swarm checkins
+      to discover where you listen to music.<br>
+      Everything runs in your browser &mdash; your data never leaves your machine.
+    </p>
+
+    <div class="info-row">
+      <div class="info-card">
+        <h3>Last.fm export</h3>
+        <p>
+          Get your CSV from
+          <a href="https://benjaminbenben.com/lastfm-to-csv/" target="_blank">benjaminbenben.com/lastfm-to-csv</a><br>
+          <span style="color:var(--text-faint);font-size:.75rem">
+            Also accepts GDPR exports &amp; pre-processed <code>scrobbles.json</code>
+          </span>
+        </p>
+      </div>
+      <div class="info-card">
+        <h3>Foursquare export</h3>
+        <p>
+          Request your data at
+          <a href="https://foursquare.com/settings" target="_blank">foursquare.com/settings</a><br>
+          <span style="color:var(--text-faint);font-size:.75rem">
+            Upload <code>checkins*.json</code> or pre-processed <code>checkins.json</code>
+          </span>
+        </p>
+      </div>
+    </div>
+
+    <div class="drop-zone" id="drop-zone">
+      <div class="icon"></div>
+      <p>Drop your files here, or click to browse</p>
+      <p class="hint">Last.fm CSV + Foursquare JSON &mdash; or pre-processed .json files</p>
+      <input type="file" id="file-input" multiple accept=".csv,.json">
+    </div>
+
+    <div class="file-list" id="file-list"></div>
+
+    <button class="btn btn-primary" id="process-btn" disabled>Generate Dashboard</button>
+
+    <div class="engine-status" id="engine-status">
+      <span class="dot loading"></span> Loading Python runtime&hellip;
+    </div>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- PROGRESS SECTION                                                    -->
+  <!-- ================================================================== -->
+  <div id="progress-section" style="display:none">
+    <h1>swarm<span>fm</span></h1>
+    <p class="subtitle">Processing your data&hellip;</p>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <p class="progress-status" id="progress-status">Initializing&hellip;</p>
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- RESULT SECTION                                                      -->
+  <!-- ================================================================== -->
+  <div id="result-section" style="display:none">
+    <div class="result-bar">
+      <button class="btn btn-primary" id="download-btn">Download HTML</button>
+      <button class="btn btn-secondary" id="restart-btn">Start Over</button>
+    </div>
+    <iframe id="dashboard-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+  </div>
+
+</div>
+
+<!-- Pyodide -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+
+<script>
+// =====================================================================
+// State
+// =====================================================================
+let pyodide = null;
+let pyodideReady = false;
+const uploadedFiles = new Map(); // name -> {content, size, detectedType}
+
+// =====================================================================
+// DOM
+// =====================================================================
+const $ = id => document.getElementById(id);
+const dropZone       = $('drop-zone');
+const fileInput      = $('file-input');
+const fileListEl     = $('file-list');
+const processBtn     = $('process-btn');
+const engineStatus   = $('engine-status');
+const uploadSection  = $('upload-section');
+const progressSection= $('progress-section');
+const resultSection  = $('result-section');
+const progressFill   = $('progress-fill');
+const progressStatus = $('progress-status');
+const logEl          = $('log');
+const dashboardFrame = $('dashboard-frame');
+
+// =====================================================================
+// Pyodide init (starts immediately)
+// =====================================================================
+(async () => {
+  try {
+    pyodide = await loadPyodide();
+    pyodideReady = true;
+    engineStatus.innerHTML = '<span class="dot ready"></span> Python runtime ready';
+    updateBtn();
+  } catch (e) {
+    engineStatus.innerHTML = '<span class="dot error"></span> Failed to load runtime';
+    console.error('Pyodide load error:', e);
+  }
+})();
+
+// =====================================================================
+// File type detection
+// =====================================================================
+function detectType(name, content) {
+  const ext = name.split('.').pop().toLowerCase();
+
+  if (ext === 'csv') {
+    const hdr = content.split('\n')[0].toLowerCase();
+    if (hdr.includes('artist') && (hdr.includes('name') || hdr.includes('track') || hdr.includes('uts')))
+      return 'lastfm';
+    return 'csv_unknown';
+  }
+
+  if (ext === 'json') {
+    try {
+      const d = JSON.parse(content);
+      // Raw Foursquare: {items:[...]} or [...] with createdAt
+      const items = d.items || (Array.isArray(d) ? d : null);
+      if (items && items.length && items[0].createdAt) return 'foursquare_raw';
+      // Processed checkins
+      if (Array.isArray(d) && d.length && d[0].timestamp && d[0].venue_name) return 'checkins';
+      // Processed scrobbles
+      if (Array.isArray(d) && d.length && d[0].timestamp && d[0].artist && d[0].track) return 'scrobbles';
+    } catch {}
+    return 'json_unknown';
+  }
+  return 'unknown';
+}
+
+const LABELS = {
+  lastfm: 'Last.fm CSV', foursquare_raw: 'Foursquare', checkins: 'Checkins JSON',
+  scrobbles: 'Scrobbles JSON', csv_unknown: 'Unknown CSV', json_unknown: 'Unknown JSON', unknown: '?',
+};
+const KNOWN = new Set(['lastfm','foursquare_raw','checkins','scrobbles']);
+
+// =====================================================================
+// File upload handling
+// =====================================================================
+function addFiles(fileList) {
+  for (const file of fileList) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const content = e.target.result;
+      uploadedFiles.set(file.name, { content, size: file.size, detectedType: detectType(file.name, content) });
+      renderFiles();
+      updateBtn();
+    };
+    reader.readAsText(file);
+  }
+}
+
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => { addFiles(e.target.files); fileInput.value = ''; });
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); addFiles(e.dataTransfer.files); });
+
+function renderFiles() {
+  fileListEl.innerHTML = [...uploadedFiles.entries()].map(([name, f]) => `
+    <div class="file-item">
+      <span class="badge ${KNOWN.has(f.detectedType) ? '' : 'warn'}">${LABELS[f.detectedType]}</span>
+      <span class="name">${name}</span>
+      <span class="size">${(f.size/1024).toFixed(0)} KB</span>
+      <span class="remove" data-name="${name}">&times;</span>
+    </div>`).join('');
+  fileListEl.querySelectorAll('.remove').forEach(el =>
+    el.addEventListener('click', () => { uploadedFiles.delete(el.dataset.name); renderFiles(); updateBtn(); }));
+}
+
+function updateBtn() {
+  const types = new Set([...uploadedFiles.values()].map(f => f.detectedType));
+  const hasScrobbles  = types.has('lastfm') || types.has('scrobbles');
+  const hasCheckins   = types.has('foursquare_raw') || types.has('checkins');
+  processBtn.disabled = !(pyodideReady && hasScrobbles && hasCheckins);
+}
+
+// =====================================================================
+// Logging / progress
+// =====================================================================
+function log(msg) { logEl.textContent += msg + '\n'; logEl.scrollTop = logEl.scrollHeight; }
+function setProgress(pct, text) {
+  progressFill.style.width = pct + '%';
+  if (text) progressStatus.textContent = text;
+}
+
+// =====================================================================
+// Geocoding (JS fetch + localStorage cache)
+// =====================================================================
+async function geocodeCoords(coords) {
+  const CACHE_KEY = 'swarmfm_geo';
+  const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+  const results = {};
+  const toFetch = [];
+
+  for (const [lat, lng] of coords) {
+    const k = `${lat},${lng}`;
+    if (cache[k]) results[k] = cache[k];
+    else toFetch.push({ lat, lng, key: k });
+  }
+
+  log(`Geocoding: ${Object.keys(results).length} cached, ${toFetch.length} to look up`);
+
+  for (let i = 0; i < toFetch.length; i++) {
+    const { lat, lng, key } = toFetch[i];
+    setProgress(15 + (i / toFetch.length) * 25,
+      `Geocoding ${i + 1}/${toFetch.length}\u2026`);
+
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=jsonv2&zoom=10&addressdetails=1`;
+      const r = await fetch(url, { headers: { 'User-Agent': 'swarmfm/1.0' } });
+      const d = await r.json();
+      const a = d.address || {};
+      const city = a.city || a.town || a.township || a.village || a.suburb
+                || a.municipality || a.county || a.state_district || a.state || '';
+      const country = a.country || '';
+      const cc = (a.country_code || '').toUpperCase();
+      results[key] = { city, country, country_code: cc };
+      cache[key] = results[key];
+    } catch {
+      results[key] = { city: '', country: '', country_code: '' };
+    }
+
+    // Nominatim rate limit: 1 req/sec
+    if (i < toFetch.length - 1) await new Promise(r => setTimeout(r, 1100));
+  }
+
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch {}
+  return results;
+}
+
+// =====================================================================
+// Python scripts (embedded)
+// =====================================================================
+const PY_PARSE_FOURSQUARE = `
+import json, os
+from datetime import datetime, timezone, timedelta
+
+with open('/data/raw_foursquare.json', encoding='utf-8') as f:
+    raw = json.load(f)
+
+items = raw.get('items', raw) if isinstance(raw, dict) else raw
+if not isinstance(items, list):
+    items = []
+
+checkins = []
+needs_geo = set()
+
+for item in items:
+    created = item.get('createdAt', '')
+    if not created:
+        continue
+    ts_str = created.split('.')[0]
+    try:
+        dt = datetime.strptime(ts_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        timestamp = dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+    except ValueError:
+        continue
+
+    tz_min = item.get('timeZoneOffset', 0)
+    venue = item.get('venue', {})
+    loc = venue.get('location', {})
+
+    lat = item.get('lat') or loc.get('lat')
+    lng = item.get('lng') or loc.get('lng')
+
+    city = loc.get('city', '') or loc.get('town', '') or ''
+    country = loc.get('country', '')
+    cc = (loc.get('cc', '') or loc.get('country_code', '')).upper()
+
+    local_time = None
+    try:
+        offset = timedelta(minutes=tz_min)
+        local_dt = dt + offset
+        sign = '+' if tz_min >= 0 else '-'
+        h, m = divmod(abs(tz_min), 60)
+        local_time = local_dt.strftime('%Y-%m-%dT%H:%M:%S') + f'{sign}{h:02d}:{m:02d}'
+    except Exception:
+        pass
+
+    checkins.append({
+        'timestamp': timestamp,
+        'local_time': local_time,
+        'tz_offset_min': tz_min,
+        'venue_name': venue.get('name', ''),
+        'venue_id': venue.get('id', ''),
+        'lat': lat, 'lng': lng,
+        'city': city, 'country': country, 'country_code': cc,
+    })
+
+    if lat and lng and not city:
+        needs_geo.add((round(float(lat), 1), round(float(lng), 1)))
+
+checkins.sort(key=lambda c: c['timestamp'])
+
+with open('/data/checkins.json', 'w', encoding='utf-8') as f:
+    json.dump(checkins, f, ensure_ascii=False)
+
+with open('/data/needs_geocoding.json', 'w', encoding='utf-8') as f:
+    json.dump(list(needs_geo), f)
+
+city_count = sum(1 for c in checkins if c.get('city'))
+print(f'Parsed {len(checkins):,} Foursquare checkins')
+print(f'  {city_count:,} have city from venue data, {len(needs_geo)} locations need geocoding')
+`;
+
+const PY_APPLY_GEOCODING = `
+import json
+
+with open('/data/checkins.json', encoding='utf-8') as f:
+    checkins = json.load(f)
+with open('/data/geo_results.json', encoding='utf-8') as f:
+    geo = json.load(f)
+
+updated = 0
+for c in checkins:
+    if c.get('city'):
+        continue
+    lat, lng = c.get('lat'), c.get('lng')
+    if lat and lng:
+        key = f"{round(float(lat),1)},{round(float(lng),1)}"
+        g = geo.get(key, {})
+        if g.get('city'):
+            c['city'] = g['city']
+            c['country'] = g.get('country', '')
+            c['country_code'] = g.get('country_code', '')
+            updated += 1
+
+with open('/data/checkins.json', 'w', encoding='utf-8') as f:
+    json.dump(checkins, f, ensure_ascii=False)
+
+geocoded = sum(1 for c in checkins if c.get('country_code'))
+print(f'Geocoded {updated:,} additional checkins')
+print(f'Total with location: {geocoded:,}/{len(checkins):,}')
+`;
+
+const PY_PARSE_LASTFM = `
+import csv, json, io
+from datetime import datetime, timezone
+
+FMTS = ['%d %b %Y, %H:%M', '%d %b %Y %H:%M', '%Y-%m-%dT%H:%M:%SZ', '%Y-%m-%d %H:%M:%S']
+
+def parse_date(s):
+    s = s.strip()
+    for fmt in FMTS:
+        try: return datetime.strptime(s, fmt).strftime('%Y-%m-%dT%H:%M:%SZ')
+        except ValueError: pass
+    return None
+
+with open('/data/lastfm_export.csv', encoding='utf-8', newline='') as f:
+    reader = csv.DictReader(f)
+    scrobbles = []
+    skipped = 0
+    for row in reader:
+        try:
+            ts = artist = track = album = None
+            if 'name' in row:
+                d = (row.get('date') or '').strip()
+                if not d: skipped += 1; continue
+                ts = parse_date(d)
+                if not ts: skipped += 1; continue
+                artist = (row.get('artist') or '').strip()
+                track = (row.get('name') or '').strip()
+                album = (row.get('album') or '').strip()
+            elif 'timestamp' in row:
+                tr = (row.get('timestamp') or '').strip()
+                if not tr: skipped += 1; continue
+                ts = tr if tr.endswith('Z') else tr + 'Z'
+                artist = (row.get('artist') or '').strip()
+                track = (row.get('track') or '').strip()
+                album = (row.get('album') or '').strip()
+            elif 'uts' in row:
+                u = (row.get('uts') or '').strip()
+                if not u: skipped += 1; continue
+                dt = datetime.fromtimestamp(int(u), tz=timezone.utc)
+                ts = dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+                artist = (row.get('artist') or '').strip()
+                track = (row.get('track') or '').strip()
+                album = (row.get('album') or '').strip()
+            else:
+                skipped += 1; continue
+            if artist and track:
+                scrobbles.append({'timestamp': ts, 'artist': artist, 'track': track, 'album': album})
+            else:
+                skipped += 1
+        except Exception:
+            skipped += 1
+
+scrobbles.sort(key=lambda s: s['timestamp'])
+
+with open('/data/scrobbles.json', 'w', encoding='utf-8') as f:
+    json.dump(scrobbles, f, ensure_ascii=False)
+
+print(f'Parsed {len(scrobbles):,} Last.fm scrobbles' + (f' ({skipped} skipped)' if skipped else ''))
+if scrobbles:
+    print(f'  {scrobbles[0]["timestamp"][:10]} to {scrobbles[-1]["timestamp"][:10]}')
+`;
+
+// =====================================================================
+// Main pipeline
+// =====================================================================
+processBtn.addEventListener('click', runPipeline);
+
+async function runPipeline() {
+  uploadSection.style.display = 'none';
+  progressSection.style.display = 'block';
+  logEl.textContent = '';
+
+  try {
+    pyodide.setStdout({ batched: msg => log(msg) });
+    pyodide.setStderr({ batched: msg => log('\u26a0 ' + msg) });
+
+    setProgress(5, 'Preparing files\u2026');
+
+    // Create virtual FS dirs
+    for (const d of ['/data', '/app']) {
+      try { pyodide.FS.mkdir(d); } catch {}
+    }
+
+    const files = [...uploadedFiles.entries()];
+    const fsFile = files.find(([, f]) => f.detectedType === 'foursquare_raw' || f.detectedType === 'checkins');
+    const lfFile = files.find(([, f]) => f.detectedType === 'lastfm' || f.detectedType === 'scrobbles');
+
+    // ── Foursquare ─────────────────────────────────────────────────
+    setProgress(10, 'Processing Foursquare data\u2026');
+
+    if (fsFile[1].detectedType === 'checkins') {
+      pyodide.FS.writeFile('/data/checkins.json', fsFile[1].content);
+      log('Loaded pre-processed checkins.json');
+    } else {
+      pyodide.FS.writeFile('/data/raw_foursquare.json', fsFile[1].content);
+      pyodide.runPython(PY_PARSE_FOURSQUARE);
+
+      // Geocode if needed
+      const needsGeo = JSON.parse(
+        pyodide.FS.readFile('/data/needs_geocoding.json', { encoding: 'utf8' })
+      );
+      if (needsGeo.length > 0) {
+        setProgress(15, `Geocoding ${needsGeo.length} locations\u2026`);
+        const geoResults = await geocodeCoords(needsGeo);
+        pyodide.FS.writeFile('/data/geo_results.json', JSON.stringify(geoResults));
+        pyodide.runPython(PY_APPLY_GEOCODING);
+      }
+    }
+
+    // ── Last.fm ────────────────────────────────────────────────────
+    setProgress(45, 'Processing Last.fm data\u2026');
+
+    if (lfFile[1].detectedType === 'scrobbles') {
+      pyodide.FS.writeFile('/data/scrobbles.json', lfFile[1].content);
+      log('Loaded pre-processed scrobbles.json');
+    } else {
+      pyodide.FS.writeFile('/data/lastfm_export.csv', lfFile[1].content);
+      pyodide.runPython(PY_PARSE_LASTFM);
+    }
+
+    // ── Correlation ────────────────────────────────────────────────
+    setProgress(60, 'Correlating scrobbles with checkins\u2026');
+
+    const correlateCode = await fetch('correlate.py').then(r => r.text());
+    pyodide.FS.writeFile('/app/correlate.py', correlateCode);
+
+    pyodide.runPython(`
+import sys
+if '/app' not in sys.path:
+    sys.path.insert(0, '/app')
+import importlib
+try:
+    import correlate
+    importlib.reload(correlate)
+except ImportError:
+    import correlate
+correlate.run('/data')
+`);
+
+    // ── Dashboard generation ───────────────────────────────────────
+    setProgress(80, 'Generating dashboard\u2026');
+
+    const genDashCode = await fetch('generate_dashboard.py').then(r => r.text());
+    const templateHtml = await fetch('template.html').then(r => r.text());
+    pyodide.FS.writeFile('/app/generate_dashboard.py', genDashCode);
+    pyodide.FS.writeFile('/app/foursquare_template.html', templateHtml);
+
+    pyodide.runPython(`
+import importlib
+try:
+    import generate_dashboard
+    importlib.reload(generate_dashboard)
+except ImportError:
+    import generate_dashboard
+generate_dashboard.run('/data', '/app/foursquare_template.html')
+`);
+
+    // ── Display ────────────────────────────────────────────────────
+    setProgress(95, 'Rendering\u2026');
+
+    const html = pyodide.FS.readFile('/data/dashboard.html', { encoding: 'utf8' });
+    const blob = new Blob([html], { type: 'text/html' });
+    window._dashboardBlob = blob;
+    dashboardFrame.src = URL.createObjectURL(blob);
+
+    setProgress(100, 'Done!');
+    await new Promise(r => setTimeout(r, 600));
+    progressSection.style.display = 'none';
+    resultSection.style.display = 'block';
+
+  } catch (e) {
+    setProgress(0, 'Error \u2014 see log');
+    log(`\nERROR: ${e.message}\n${e.stack || ''}`);
+    console.error(e);
+  }
+}
+
+// =====================================================================
+// Result actions
+// =====================================================================
+$('download-btn').addEventListener('click', () => {
+  if (!window._dashboardBlob) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(window._dashboardBlob);
+  a.download = 'swarmfm_dashboard.html';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+});
+
+$('restart-btn').addEventListener('click', () => {
+  resultSection.style.display = 'none';
+  uploadSection.style.display = 'block';
+  uploadedFiles.clear();
+  renderFiles();
+  updateBtn();
+});
+</script>
+
+</body>
+</html>
