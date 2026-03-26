@@ -382,6 +382,33 @@ iframe#dashboard-frame {
   <div id="progress-section" style="display:none">
     <h1>swarm<span>fm</span></h1>
     <p class="subtitle">Processing your data&hellip;</p>
+
+    <!-- Home cities questionnaire (shown at top during loading) -->
+    <div id="home-panel" class="home-panel" style="display:none">
+      <div class="home-panel-header">
+        <h3>Where have you lived?</h3>
+        <p>This helps distinguish trips from home. You can auto-detect or enter manually.</p>
+      </div>
+      <div class="home-toggle">
+        <label class="toggle-option">
+          <input type="radio" name="home-mode" value="auto" checked>
+          <span>Auto-detect from checkins</span>
+        </label>
+        <label class="toggle-option">
+          <input type="radio" name="home-mode" value="manual">
+          <span>I'll enter my cities</span>
+        </label>
+      </div>
+      <div id="home-manual" style="display:none">
+        <div class="home-row-labels">
+          <span>City</span><span>Country</span><span>From</span><span>To</span><span></span>
+        </div>
+        <div id="home-rows"></div>
+        <button class="btn btn-secondary" id="home-add-btn" style="font-size:.8rem;padding:6px 12px;margin-top:8px">+ Add city</button>
+      </div>
+      <button class="btn btn-primary" id="home-confirm-btn" style="margin-top:14px;width:100%;padding:10px;font-size:.85rem">Continue</button>
+    </div>
+
     <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
     <p class="progress-status" id="progress-status">Initializing&hellip;</p>
     <div id="geo-facts" class="geo-facts" style="display:none"></div>
@@ -405,29 +432,6 @@ iframe#dashboard-frame {
           <div id="preview-dow-labels" class="preview-dow-labels"></div>
         </div>
       </div>
-    </div>
-
-    <!-- Home cities questionnaire (shown during geocoding) -->
-    <div id="home-panel" class="home-panel" style="display:none">
-      <div class="home-panel-header">
-        <h3>Where have you lived?</h3>
-        <p>This helps distinguish trips from home. You can auto-detect or enter manually.</p>
-      </div>
-      <div class="home-toggle">
-        <label class="toggle-option">
-          <input type="radio" name="home-mode" value="auto" checked>
-          <span>Auto-detect from checkins</span>
-        </label>
-        <label class="toggle-option">
-          <input type="radio" name="home-mode" value="manual">
-          <span>I'll enter my cities</span>
-        </label>
-      </div>
-      <div id="home-manual" style="display:none">
-        <div id="home-rows"></div>
-        <button class="btn btn-secondary" id="home-add-btn" style="font-size:.8rem;padding:6px 12px;margin-top:8px">+ Add city</button>
-      </div>
-      <button class="btn btn-primary" id="home-confirm-btn" style="margin-top:14px;width:100%;padding:10px;font-size:.85rem">Continue</button>
     </div>
 
     <div class="log" id="log"></div>
@@ -709,7 +713,7 @@ function renderPreviewCharts(scrobbles) {
   if (maxD > 0) {
     const dowEl = document.getElementById('preview-dow');
     dowEl.innerHTML = dowCounts.map((c, i) =>
-      `<div class="col"><div class="bar" style="height:${Math.max(4, c / maxD * 100)}%"></div></div>`
+      `<div class="col"><div class="bar" style="height:${Math.max(4, Math.round(c / maxD * 48))}px"></div></div>`
     ).join('');
     const dlEl = document.getElementById('preview-dow-labels');
     dlEl.innerHTML = days.map(d => `<span>${d}</span>`).join('');
