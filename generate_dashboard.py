@@ -119,6 +119,14 @@ def run(data_dir="./data", template_path=None):
     checkins  = _load(checkins_path, [])
     print(f"  {len(scrobbles):,} scrobbles, {len(checkins):,} checkins")
 
+    # Infer most common timezone offset from checkins for local-time charts
+    tz_offsets = [c.get("tz_offset_min", 0) for c in checkins if c.get("tz_offset_min")]
+    home_tz_offset = Counter(tz_offsets).most_common(1)[0][0] if tz_offsets else 0
+    _tz_delta = timedelta(minutes=home_tz_offset)
+    if home_tz_offset:
+        sign = "+" if home_tz_offset >= 0 else ""
+        print(f"  Local time offset: UTC{sign}{home_tz_offset // 60}:{abs(home_tz_offset) % 60:02d}")
+
     # ── plays_by_month ────────────────────────────────────────────────────────
     month_counter = Counter()
     dow_counter   = Counter()
@@ -150,12 +158,13 @@ def run(data_dir="./data", template_path=None):
             dt = _parse_ts(ts)
         except Exception:
             continue
+        local_dt = dt + _tz_delta
         rows.append({
             **s,
             "_dt":    dt,
             "_year":  str(dt.year),
             "_month": dt.strftime("%Y-%m"),
-            "_hour":  dt.hour,
+            "_hour":  local_dt.hour,
             "_dow":   dt.weekday(),
         })
 
@@ -204,7 +213,7 @@ def run(data_dir="./data", template_path=None):
     # Top listening days
     day_counter_dt = Counter(r["_dt"].date() for r in rows)
     top_days = []
-    for d, count in day_counter_dt.most_common(20):
+    for d, count in day_counter_dt.most_common(10):
         day_artists = Counter(
             r.get("artist", "") for r in rows if r["_dt"].date() == d
         ).most_common(1)
@@ -226,7 +235,7 @@ def run(data_dir="./data", template_path=None):
         sessions.append(session)
 
     top_sessions = []
-    for s in sorted(sessions, key=len, reverse=True)[:15]:
+    for s in sorted(sessions, key=len, reverse=True)[:10]:
         dur_h = (s[-1]["_dt"] - s[0]["_dt"]).total_seconds() / 3600
         top_a = [a for a, _ in Counter(r.get("artist", "") for r in s).most_common(3)]
         top_sessions.append({

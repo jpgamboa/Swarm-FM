@@ -118,6 +118,10 @@ h1 span { color: var(--accent); }
 }
 
 /* ── Progress ───────────────────────────────────────────────────── */
+@keyframes progressPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
 .progress-bar {
   height: 4px; background: var(--border); border-radius: 2px;
   margin: 20px 0 12px; overflow: hidden;
@@ -125,6 +129,7 @@ h1 span { color: var(--accent); }
 .progress-fill {
   height: 100%; background: var(--accent); border-radius: 2px;
   width: 0%; transition: width .4s ease-out;
+  animation: progressPulse 2s ease-in-out infinite;
 }
 .progress-status {
   color: var(--text-dim); font-size: 0.82rem; font-family: var(--font-mono);
@@ -139,8 +144,8 @@ h1 span { color: var(--accent); }
 
 /* ── Home cities panel ─────────────────────────────────────────── */
 .home-panel {
-  margin: 14px 0; padding: 16px;
-  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  margin: 0 0 20px; padding: 20px;
+  background: #1a1a24; border: 1px solid #2e2e3a; border-radius: 10px;
 }
 .home-panel-header h3 {
   font-family: var(--font-display); font-size: 1.1rem; font-weight: 400; margin-bottom: 4px;
@@ -158,8 +163,14 @@ h1 span { color: var(--accent); }
 .toggle-option input[type="radio"] {
   accent-color: var(--accent);
 }
+.home-row-labels {
+  display: grid; grid-template-columns: 1fr 90px 120px 120px 28px;
+  gap: 6px; margin-bottom: 6px;
+  font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-faint);
+  text-transform: uppercase; letter-spacing: .04em;
+}
 .home-row {
-  display: grid; grid-template-columns: 1fr 80px 110px 110px 28px;
+  display: grid; grid-template-columns: 1fr 90px 120px 120px 28px;
   gap: 6px; margin-bottom: 6px; align-items: center;
 }
 .home-row input {
@@ -242,6 +253,36 @@ h1 span { color: var(--accent); }
   margin-top: 2px;
 }
 .preview-dow-labels span { flex: 1; text-align: center; }
+.preview-stats {
+  display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.preview-stat {
+  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 14px; flex: 1; min-width: 100px;
+}
+.preview-stat .val {
+  font-size: 1.1rem; font-weight: 600; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.preview-stat .lbl {
+  font-size: 0.65rem; color: var(--text-faint); text-transform: uppercase;
+  letter-spacing: .05em; margin-top: 2px;
+}
+.preview-two-col {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+@media (max-width: 500px) { .preview-two-col { grid-template-columns: 1fr; } }
+.preview-hour {
+  display: flex; align-items: flex-end; gap: 1px; height: 48px;
+}
+.preview-hour .bar {
+  flex: 1; background: var(--accent); border-radius: 1px 1px 0 0; opacity: 0.75;
+}
+.preview-hour-labels {
+  display: flex; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-faint);
+  margin-top: 2px;
+}
 
 /* ── Geo facts ticker ──────────────────────────────────────────── */
 .geo-facts {
@@ -416,6 +457,7 @@ iframe#dashboard-frame {
     <!-- Preview charts (shown while geocoding runs) -->
     <div id="preview-charts" class="preview-charts" style="display:none">
       <div class="preview-label">Preview &mdash; full dashboard loading</div>
+      <div id="preview-stats" class="preview-stats"></div>
       <div class="preview-grid">
         <div class="preview-card">
           <div class="preview-title">Plays by Month</div>
@@ -426,10 +468,17 @@ iframe#dashboard-frame {
           <div class="preview-title">Top Artists</div>
           <div id="preview-artists"></div>
         </div>
-        <div class="preview-card">
-          <div class="preview-title">Day of Week</div>
-          <div id="preview-dow" class="preview-dow"></div>
-          <div id="preview-dow-labels" class="preview-dow-labels"></div>
+        <div class="preview-two-col">
+          <div class="preview-card">
+            <div class="preview-title">Day of Week</div>
+            <div id="preview-dow" class="preview-dow"></div>
+            <div id="preview-dow-labels" class="preview-dow-labels"></div>
+          </div>
+          <div class="preview-card">
+            <div class="preview-title">Hour of Day</div>
+            <div id="preview-hour" class="preview-hour"></div>
+            <div id="preview-hour-labels" class="preview-hour-labels"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -611,9 +660,9 @@ function _addHomeRow(city = '', cc = '', start = '', end = '') {
   row.className = 'home-row';
   row.innerHTML = `
     <input type="text" placeholder="City" value="${city}">
-    <input type="text" placeholder="CC" maxlength="2" value="${cc}" style="text-transform:uppercase">
-    <input type="month" value="${start}">
-    <input type="month" value="${end}">
+    <input type="text" placeholder="US" maxlength="2" value="${cc}" style="text-transform:uppercase" title="2-letter country code (e.g. US, CN, BE)">
+    <input type="month" placeholder="Start" value="${start}">
+    <input type="month" placeholder="End" value="${end}">
     <button class="remove-btn" title="Remove">&times;</button>`;
   row.querySelector('.remove-btn').addEventListener('click', () => row.remove());
   rows.appendChild(row);
@@ -666,7 +715,9 @@ function renderPreviewCharts(scrobbles) {
 
   const monthCounts = {};
   const dowCounts = [0,0,0,0,0,0,0];
+  const hourCounts = new Array(24).fill(0);
   const artistCounts = {};
+  const uniqueArtists = new Set();
 
   for (const s of scrobbles) {
     const ts = s.timestamp;
@@ -677,9 +728,21 @@ function renderPreviewCharts(scrobbles) {
     if (!isNaN(dt)) {
       const dow = (dt.getUTCDay() + 6) % 7; // Mon=0
       dowCounts[dow]++;
+      hourCounts[dt.getUTCHours()]++;
     }
-    if (s.artist) artistCounts[s.artist] = (artistCounts[s.artist] || 0) + 1;
+    if (s.artist) { artistCounts[s.artist] = (artistCounts[s.artist] || 0) + 1; uniqueArtists.add(s.artist); }
   }
+
+  // ── Stats row ──
+  const firstMonth = Object.keys(monthCounts).sort()[0] || '';
+  const lastMonth = Object.keys(monthCounts).sort().pop() || '';
+  document.getElementById('preview-stats').innerHTML = [
+    `<div class="preview-stat"><div class="val">${scrobbles.length.toLocaleString()}</div><div class="lbl">Total Plays</div></div>`,
+    `<div class="preview-stat"><div class="val">${uniqueArtists.size.toLocaleString()}</div><div class="lbl">Artists</div></div>`,
+    `<div class="preview-stat"><div class="val">${Object.keys(monthCounts).length}</div><div class="lbl">Months</div></div>`,
+    `<div class="preview-stat"><div class="val">${firstMonth || '—'}</div><div class="lbl">First</div></div>`,
+    `<div class="preview-stat"><div class="val">${lastMonth || '—'}</div><div class="lbl">Latest</div></div>`,
+  ].join('');
 
   // ── Timeline ──
   const months = Object.keys(monthCounts).sort();
@@ -717,6 +780,17 @@ function renderPreviewCharts(scrobbles) {
     ).join('');
     const dlEl = document.getElementById('preview-dow-labels');
     dlEl.innerHTML = days.map(d => `<span>${d}</span>`).join('');
+  }
+
+  // ── Hour of Day ──
+  const maxH = Math.max(...hourCounts);
+  if (maxH > 0) {
+    const hourEl = document.getElementById('preview-hour');
+    hourEl.innerHTML = hourCounts.map(c =>
+      `<div class="bar" style="height:${Math.max(2, Math.round(c / maxH * 48))}px"></div>`
+    ).join('');
+    const hlEl = document.getElementById('preview-hour-labels');
+    hlEl.innerHTML = '<span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>23h</span>';
   }
 
   document.getElementById('preview-charts').style.display = 'block';
@@ -809,7 +883,7 @@ async function geocodeCoords(coords, airportVenues = {}) {
     const remMin = Math.floor(remaining / 60);
     const remSec = remaining % 60;
     const timeStr = remMin > 0 ? `${remMin}m ${remSec}s` : `${remSec}s`;
-    setProgress(15 + (i / toFetch.length) * 25,
+    setProgress(10 + (i / toFetch.length) * 70,
       `Geocoding ${i + 1}/${toFetch.length} \u2014 ~${timeStr} remaining`);
 
     try {
@@ -1211,16 +1285,18 @@ processBtn.addEventListener('click', runPipeline);
 async function runPipeline() {
   uploadSection.style.display = 'none';
   progressSection.style.display = 'block';
+  progressSection.style.animation = 'fadeUp .4s ease-out';
   logEl.textContent = '';
   // Pre-load seed cache (facts ticker starts during geocoding)
   _loadGeoSeed();
+  setProgress(1, 'Starting\u2026');
   const homePanelReady = showHomePanel();
 
   try {
     pyodide.setStdout({ batched: msg => log(msg) });
     pyodide.setStderr({ batched: msg => log('\u26a0 ' + msg) });
 
-    setProgress(5, 'Preparing files\u2026');
+    setProgress(2, 'Preparing files\u2026');
 
     // Create virtual FS dirs
     for (const d of ['/data', '/app']) {
@@ -1237,7 +1313,7 @@ async function runPipeline() {
     const hasSpotify = spFiles.length > 0;
 
     if (hasLastfm) {
-      setProgress(8, 'Processing Last.fm data\u2026');
+      setProgress(3, 'Processing Last.fm data\u2026');
       if (lfFile[1].detectedType === 'scrobbles') {
         pyodide.FS.writeFile('/data/scrobbles.json', lfFile[1].content);
         log('Loaded pre-processed scrobbles.json');
@@ -1248,7 +1324,7 @@ async function runPipeline() {
     }
 
     if (hasSpotify) {
-      setProgress(10, 'Processing Spotify data\u2026');
+      setProgress(4, 'Processing Spotify data\u2026');
       const allEntries = [];
       for (const [name, f] of spFiles) {
         const entries = JSON.parse(f.content);
@@ -1275,7 +1351,7 @@ async function runPipeline() {
     } catch {}
 
     // ── Foursquare ─────────────────────────────────────────────────
-    setProgress(15, 'Processing Foursquare data\u2026');
+    setProgress(6, 'Processing Foursquare data\u2026');
 
     const fsTypes = new Set(fsFiles.map(([, f]) => f.detectedType));
     if (fsTypes.has('checkins') && !fsTypes.has('foursquare_raw')) {
@@ -1302,7 +1378,7 @@ async function runPipeline() {
         pyodide.FS.readFile('/data/needs_geocoding.json', { encoding: 'utf8' })
       );
       if (needsGeo.length > 0) {
-        setProgress(20, `Geocoding ${needsGeo.length} locations\u2026`);
+        setProgress(10, `Geocoding ${needsGeo.length} locations\u2026`);
         const airportVenues = JSON.parse(
           pyodide.FS.readFile('/data/airport_venues.json', { encoding: 'utf8' })
         );
@@ -1320,7 +1396,7 @@ async function runPipeline() {
     stopGeoFacts();
 
     // ── Correlation ────────────────────────────────────────────────
-    setProgress(60, 'Correlating scrobbles with checkins\u2026');
+    setProgress(82, 'Correlating scrobbles with checkins\u2026');
 
     // Write manual home periods if user provided them
     const manualPeriods = getManualHomePeriods();
@@ -1349,7 +1425,7 @@ correlate.run('/data')
 `);
 
     // ── Dashboard generation ───────────────────────────────────────
-    setProgress(80, 'Generating dashboard\u2026');
+    setProgress(88, 'Generating dashboard\u2026');
 
     const genDashCode = await fetch('generate_dashboard.py').then(r => r.text());
     const templateHtml = await fetch('template.html').then(r => r.text());
