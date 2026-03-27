@@ -164,20 +164,23 @@ h1 span { color: var(--accent); }
   accent-color: var(--accent);
 }
 .home-row-labels {
-  display: grid; grid-template-columns: 1fr 90px 120px 120px 28px;
-  gap: 6px; margin-bottom: 6px;
-  font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-faint);
+  display: grid; grid-template-columns: 1fr 160px 100px 100px 28px;
+  gap: 6px; margin-bottom: 6px; padding: 0 2px;
+  font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-faint);
   text-transform: uppercase; letter-spacing: .04em;
 }
 .home-row {
-  display: grid; grid-template-columns: 1fr 90px 120px 120px 28px;
+  display: grid; grid-template-columns: 1fr 160px 100px 100px 28px;
   gap: 6px; margin-bottom: 6px; align-items: center;
 }
-.home-row input {
+.home-row input, .home-row select {
   background: var(--card2); border: 1px solid var(--border); border-radius: 6px;
   padding: 6px 8px; color: var(--text); font-family: var(--font-body); font-size: .8rem;
+  height: 34px;
 }
-.home-row input:focus { outline: none; border-color: var(--accent); }
+.home-row select { cursor: pointer; }
+.home-row select option { background: var(--card2); color: var(--text); }
+.home-row input:focus, .home-row select:focus { outline: none; border-color: var(--accent); }
 .home-row input::placeholder { color: var(--text-faint); }
 .home-row .remove-btn {
   background: none; border: none; color: var(--text-faint); cursor: pointer;
@@ -428,26 +431,17 @@ iframe#dashboard-frame {
     <div id="home-panel" class="home-panel" style="display:none">
       <div class="home-panel-header">
         <h3>Where have you lived?</h3>
-        <p>This helps distinguish trips from home. You can auto-detect or enter manually.</p>
+        <p>This helps distinguish trips from home. Fill in below, or skip to auto-detect.</p>
       </div>
-      <div class="home-toggle">
-        <label class="toggle-option">
-          <input type="radio" name="home-mode" value="auto" checked>
-          <span>Auto-detect from checkins</span>
-        </label>
-        <label class="toggle-option">
-          <input type="radio" name="home-mode" value="manual">
-          <span>I'll enter my cities</span>
-        </label>
+      <div class="home-row-labels">
+        <span>City</span><span>Country</span><span>From (YYYY-MM)</span><span>To (YYYY-MM)</span><span></span>
       </div>
-      <div id="home-manual" style="display:none">
-        <div class="home-row-labels">
-          <span>City</span><span>Country</span><span>From</span><span>To</span><span></span>
-        </div>
-        <div id="home-rows"></div>
-        <button class="btn btn-secondary" id="home-add-btn" style="font-size:.8rem;padding:6px 12px;margin-top:8px">+ Add city</button>
+      <div id="home-rows"></div>
+      <button class="btn btn-secondary" id="home-add-btn" style="font-size:.8rem;padding:6px 12px;margin-top:8px">+ Add city</button>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn btn-primary" id="home-confirm-btn" style="flex:1;padding:10px;font-size:.85rem">Use my cities</button>
+        <button class="btn btn-secondary" id="home-skip-btn" style="flex:1;padding:10px;font-size:.85rem">Skip &mdash; auto-detect</button>
       </div>
-      <button class="btn btn-primary" id="home-confirm-btn" style="margin-top:14px;width:100%;padding:10px;font-size:.85rem">Continue</button>
     </div>
 
     <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
@@ -654,51 +648,69 @@ async function _loadGeoSeed() {
 }
 
 // ── Home cities panel ──────────────────────────────────────────────
+const _COUNTRIES = [
+  ['US','United States'],['CN','China'],['GB','United Kingdom'],['CA','Canada'],
+  ['AU','Australia'],['DE','Germany'],['FR','France'],['JP','Japan'],['KR','South Korea'],
+  ['MX','Mexico'],['BR','Brazil'],['IN','India'],['IT','Italy'],['ES','Spain'],
+  ['NL','Netherlands'],['SE','Sweden'],['NO','Norway'],['DK','Denmark'],['FI','Finland'],
+  ['IE','Ireland'],['BE','Belgium'],['AT','Austria'],['CH','Switzerland'],['PT','Portugal'],
+  ['PL','Poland'],['CZ','Czech Republic'],['GR','Greece'],['TR','Turkey'],['RU','Russia'],
+  ['UA','Ukraine'],['TH','Thailand'],['SG','Singapore'],['NZ','New Zealand'],['AR','Argentina'],
+  ['CL','Chile'],['CO','Colombia'],['PE','Peru'],['IS','Iceland'],['HK','Hong Kong'],
+  ['TW','Taiwan'],['IL','Israel'],['AE','UAE'],['ZA','South Africa'],['EG','Egypt'],
+  ['MY','Malaysia'],['PH','Philippines'],['ID','Indonesia'],['VN','Vietnam'],['HR','Croatia'],
+  ['HU','Hungary'],['RO','Romania'],['LT','Lithuania'],['LV','Latvia'],['EE','Estonia'],
+];
+function _ccOptions(selected) {
+  return '<option value="">--</option>' +
+    _COUNTRIES.map(([cc, name]) =>
+      `<option value="${cc}"${cc === selected ? ' selected' : ''}>${cc} — ${name}</option>`
+    ).join('');
+}
 function _addHomeRow(city = '', cc = '', start = '', end = '') {
   const rows = document.getElementById('home-rows');
   const row = document.createElement('div');
   row.className = 'home-row';
   row.innerHTML = `
-    <input type="text" placeholder="City" value="${city}">
-    <input type="text" placeholder="US" maxlength="2" value="${cc}" style="text-transform:uppercase" title="2-letter country code (e.g. US, CN, BE)">
-    <input type="month" placeholder="Start" value="${start}">
-    <input type="month" placeholder="End" value="${end}">
+    <input type="text" placeholder="e.g. Austin" value="${city}">
+    <select title="Country">${_ccOptions(cc)}</select>
+    <input type="text" placeholder="2011-01" pattern="\\d{4}-\\d{2}" value="${start}">
+    <input type="text" placeholder="2023-06" pattern="\\d{4}-\\d{2}" value="${end}">
     <button class="remove-btn" title="Remove">&times;</button>`;
   row.querySelector('.remove-btn').addEventListener('click', () => row.remove());
   rows.appendChild(row);
 }
 
+let _homePanelResolve = null;
 function showHomePanel() {
   const panel = document.getElementById('home-panel');
   panel.style.display = 'block';
-  // Wire up toggle
-  document.querySelectorAll('input[name="home-mode"]').forEach(r => {
-    r.addEventListener('change', () => {
-      document.getElementById('home-manual').style.display =
-        r.value === 'manual' && r.checked ? 'block' : 'none';
-    });
-  });
   document.getElementById('home-add-btn').addEventListener('click', () => _addHomeRow());
-  // Start with one empty row
   _addHomeRow();
-  // Return a promise that resolves when the user clicks Continue
   return new Promise(resolve => {
-    document.getElementById('home-confirm-btn').addEventListener('click', resolve, { once: true });
+    _homePanelResolve = resolve;
+    document.getElementById('home-confirm-btn').addEventListener('click', () => {
+      _homePanelResolve = null;
+      resolve('manual');
+    }, { once: true });
+    document.getElementById('home-skip-btn').addEventListener('click', () => {
+      _homePanelResolve = null;
+      resolve('auto');
+    }, { once: true });
   });
 }
 
-function getManualHomePeriods() {
-  const mode = document.querySelector('input[name="home-mode"]:checked');
-  if (!mode || mode.value === 'auto') return null;
+function getManualHomePeriods(mode) {
+  if (mode === 'auto') return null;
   const rows = document.querySelectorAll('#home-rows .home-row');
   const periods = [];
   for (const row of rows) {
-    const inputs = row.querySelectorAll('input');
-    const city = inputs[0].value.trim();
-    const cc = inputs[1].value.trim().toUpperCase();
-    const start = inputs[2].value; // "YYYY-MM"
-    const end = inputs[3].value;
-    if (city && cc && start && end) {
+    const city = row.querySelector('input[type="text"]').value.trim();
+    const cc = row.querySelector('select').value;
+    const dateInputs = [...row.querySelectorAll('input[type="text"]')];
+    const start = dateInputs[1]?.value.trim(); // second text input
+    const end = dateInputs[2]?.value.trim();   // third text input
+    if (city && cc && start && end && /^\d{4}-\d{2}$/.test(start) && /^\d{4}-\d{2}$/.test(end)) {
       periods.push({ city, country_code: cc, start: start + '-01', end: end + '-28' });
     }
   }
@@ -1287,10 +1299,12 @@ async function runPipeline() {
   progressSection.style.display = 'block';
   progressSection.style.animation = 'fadeUp .4s ease-out';
   logEl.textContent = '';
-  // Pre-load seed cache (facts ticker starts during geocoding)
-  _loadGeoSeed();
+  // Pre-load seed cache and start facts ticker
+  _loadGeoSeed().then(seed => { if (Object.keys(seed).length) startGeoFacts(seed); });
   setProgress(1, 'Starting\u2026');
   const homePanelReady = showHomePanel();
+  // Yield to let the browser paint the progress section before heavy sync work
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
   try {
     pyodide.setStdout({ batched: msg => log(msg) });
@@ -1391,7 +1405,7 @@ async function runPipeline() {
     }
 
     // ── Wait for home city choice ─────────────────────────────────
-    await homePanelReady;
+    const homeMode = await homePanelReady;
     hideHomePanel();
     stopGeoFacts();
 
@@ -1399,7 +1413,7 @@ async function runPipeline() {
     setProgress(82, 'Correlating scrobbles with checkins\u2026');
 
     // Write manual home periods if user provided them
-    const manualPeriods = getManualHomePeriods();
+    const manualPeriods = getManualHomePeriods(homeMode);
     if (manualPeriods) {
       pyodide.FS.writeFile('/data/manual_home.json', JSON.stringify(manualPeriods));
       log(`Using ${manualPeriods.length} manual home period(s)`);
