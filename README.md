@@ -12,8 +12,11 @@ A browser-based version is available at the project's GitHub Pages site — no P
 
 1. Visit the [hosted page](https://jpgamboa.github.io/Swarm-FM/) (or serve `docs/` locally: `cd docs && python3 -m http.server 8765`)
 2. Drop your Last.fm CSV or Spotify JSON files + Foursquare JSON exports
-3. Files are parsed and correlated in your browser
-4. Download the generated dashboard HTML
+3. Enter your home cities (recommended) or use auto-detect
+4. Files are parsed and correlated in your browser — preview charts show while geocoding runs
+5. Download the generated dashboard HTML
+
+After generating the dashboard, you can click **Edit Home Cities** to adjust your home periods and regenerate without re-uploading or re-geocoding. Charts and maps in the dashboard are click-to-expand for a larger view.
 
 **To deploy your own instance:** push this repo to GitHub, then go to Settings > Pages > Source: deploy from branch `main`, folder `/docs`.
 
@@ -64,11 +67,11 @@ A scrobble is attributed to a venue if it occurred within a **per-category time 
 
 The most recent matching checkin wins if windows overlap.
 
-**Home city** is inferred automatically from your checkin patterns. If you moved during the period covered by your data, Swarm-FM detects the transition using a rolling 120-day window and tracks multiple home periods (e.g. Shanghai 2011–2014 → Austin 2014–2020). Short stays under 4 months are filtered out as trips. Lunch suppression, trip detection, and travel artist analysis all respect the home city that was active at each point in time.
+**Home city** can be entered manually (recommended) or inferred automatically from checkin patterns. Auto-detect uses a rolling 120-day window to find the dominant city at each point in time, filtering out county-level geocode results and validating that each period has actual checkins. Short stays under 4 months are filtered as trips. Auto-detect works best when you check in regularly (several times per month); if your checkin frequency dropped significantly over the years, manual entry is more accurate. The web app includes an info modal explaining the algorithm's strengths and limitations. Lunch suppression, trip detection, and travel artist analysis all respect the home city active at each point in time.
 
-**Airport city correction:** airports are often located in small municipalities outside the cities they serve (e.g. "Steenokkerzeel" for Brussels Airport). Swarm-FM detects airport venues and uses a name-based search to resolve the correct served city instead of the municipality at the airport's coordinates.
+**Geocode resolution:** coordinates are reverse-geocoded to city names via Nominatim. When the initial result returns a district or suburb instead of a city (e.g. "Liuli" instead of "Shanghai"), a broader zoom level is tried to find the parent city. Airports are detected by venue name and searched directly to resolve the served city instead of the municipality at the airport's coordinates (e.g. "Zaventem" → "Brussels"). County-level results (e.g. "Travis County") are filtered out of home city inference.
 
-**Trips** are detected by finding consecutive days where all checkins are outside your home city. Gaps of up to 7 days are tolerated. Trips must be at least 2 days and have at least 5 scrobbles to appear in the dashboard. Trip type (flight, train, or road) is inferred from venue names during the trip.
+**Trips** are detected by finding consecutive days where all checkins are outside your home city. Gaps of up to 7 days are tolerated. Trips must be at least 2 days and have at least 5 scrobbles to appear in the dashboard.
 
 **Map:** the dashboard map shows two layers — green dots for cities with attributed music plays, and gray dots for all other visited cities.
 
@@ -139,7 +142,7 @@ If both Last.fm and Spotify are configured, the Spotify step automatically merge
 
 ## About geocoding
 
-Step 2 reverse-geocodes every checkin's lat/lng coordinates to city + country using the [Nominatim API](https://nominatim.org/) (OpenStreetMap, free, no key required). Results are cached in `data/geo_cache.json`. The first run over a large checkin history (~1,400 unique locations) takes about 25 minutes at Nominatim's 1 req/sec rate limit; all subsequent runs are instant.
+Step 2 reverse-geocodes every checkin's lat/lng coordinates to city + country using the [Nominatim API](https://nominatim.org/) (OpenStreetMap, free, no key required). Results are cached in `data/geo_cache.json`. The first run over a large checkin history (~1,400 unique locations) takes about 25 minutes at Nominatim's 1 req/sec rate limit; all subsequent runs are instant. The web app shows time estimates before geocoding begins.
 
 The web version ships a pre-built `geo_seed.json` cache that covers common locations, significantly reducing the number of Nominatim requests needed on first run.
 

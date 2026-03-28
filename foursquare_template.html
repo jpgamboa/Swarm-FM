@@ -998,7 +998,6 @@ function renderFoursquare() {
 
     for (const t of sorted) {
       const flags = (t.ccs||[]).map(cc => _ccFlag(cc)).join(' ');
-      const modeIcon = t.trip_type === 'train' ? '🚂' : t.trip_type === 'road' ? '🚗' : '✈️';
       const scoreClass = t.music_score >= 7 ? 'score-green' : t.music_score >= 4 ? 'score-white' : 'score-dim';
       const artists = (t.top_artists||[]).slice(0,3).map(a =>
         `<span class="plays-pill">${a.artist}</span>`
@@ -1007,7 +1006,7 @@ function renderFoursquare() {
         ? `<div style="font-size:.75rem;color:#5a5a62;margin-top:4px">&#9835; ${t.top_track}</div>` : '';
       html += `<tr>
         <td style="color:#fff;white-space:nowrap">${t.start||''}${t.end && t.end !== t.start ? ` – ${t.end}` : ''}</td>
-        <td>${modeIcon} ${flags} ${t.destination||'—'}</td>
+        <td>${flags} ${t.destination||'—'}</td>
         <td>${t.days||0}</td>
         <td>${(t.plays||0).toLocaleString()}</td>
         <td>${(t.checkins||0).toLocaleString()}</td>

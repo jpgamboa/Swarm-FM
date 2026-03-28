@@ -159,6 +159,13 @@ def _infer_home_city(checkins):
     return city_counts.most_common(1)[0][0]
 
 
+def _is_county_level(city_name):
+    """Check if a city name is actually a county, not a real city."""
+    lower = city_name.lower()
+    return ("county" in lower or "parish" in lower
+            or lower.endswith(" township"))
+
+
 def _infer_home_periods(checkins):
     """
     Detect home city changes over time by finding the dominant city in
@@ -166,12 +173,14 @@ def _infer_home_periods(checkins):
       [{"city": ..., "country_code": ..., "start": date, "end": date}, ...]
     sorted chronologically. Each period represents where the user lived.
     """
-    # Build daily checkin city counts
+    # Build daily checkin city counts, filtering out county-level results
     dated = []
     for c in checkins:
         city = c.get("city", "")
         cc = c.get("country_code", "")
         if not city or not cc:
+            continue
+        if _is_county_level(city):
             continue
         try:
             dt = _parse_ts(c["timestamp"]).date()
@@ -263,6 +272,23 @@ def _infer_home_periods(checkins):
                 periods[-1]["end"] = p["end"]
             else:
                 periods.append(dict(p))
+
+    # Validate periods: city must have checkins actually within the period
+    # (not just from rolling window spillover from adjacent periods)
+    validated = []
+    for p in periods:
+        actual_checkins = sum(
+            1 for d, city, cc in dated
+            if city == p["city"] and cc == p["country_code"]
+            and p["start"] <= d <= p["end"]
+        )
+        if actual_checkins >= 3:
+            # Merge with previous if same city
+            if validated and validated[-1]["city"] == p["city"] and validated[-1]["country_code"] == p["country_code"]:
+                validated[-1]["end"] = p["end"]
+            else:
+                validated.append(p)
+    periods = validated
 
     # If everything got filtered, fall back to overall most common
     if not periods:

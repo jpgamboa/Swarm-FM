@@ -110,16 +110,41 @@ class Geocoder:
             "country_code": _extract_country_code(address),
         }
 
-        # If result is a village/town/suburb (not a city), try to find the
-        # parent city by searching the county. This consolidates small
-        # municipalities (e.g. West Lake Hills) into their metro area (Austin).
-        if not address.get("city") and address.get("county") and address.get("state"):
-            parent = self._find_parent_city(
-                address["county"], address["state"],
-                address.get("country", ""), lat_r, lng_r
-            )
-            if parent:
-                result["city"] = parent
+        # If result is a village/town/suburb/district (not a city), try
+        # broader zoom to get the parent city (e.g. Liuli → Shanghai).
+        if not address.get("city"):
+            self._rate_wait()
+            try:
+                broad_params = urllib.parse.urlencode({
+                    "lat": lat_r, "lon": lng_r,
+                    "format": "jsonv2", "zoom": 5, "addressdetails": 1,
+                })
+                broad_url = f"{NOMINATIM_REVERSE_URL}?{broad_params}"
+                broad_req = urllib.request.Request(broad_url, headers={
+                    "User-Agent": USER_AGENT, "Accept-Language": "en",
+                })
+                with urllib.request.urlopen(broad_req, timeout=10) as resp:
+                    broad_data = json.loads(resp.read().decode("utf-8"))
+                self._last_req = time.time()
+                broad_addr = broad_data.get("address", {})
+                if broad_addr.get("city"):
+                    result["city"] = broad_addr["city"]
+                elif address.get("county") and address.get("state"):
+                    parent = self._find_parent_city(
+                        address["county"], address["state"],
+                        address.get("country", ""), lat_r, lng_r
+                    )
+                    if parent:
+                        result["city"] = parent
+            except Exception:
+                # Fallback to county search
+                if address.get("county") and address.get("state"):
+                    parent = self._find_parent_city(
+                        address["county"], address["state"],
+                        address.get("country", ""), lat_r, lng_r
+                    )
+                    if parent:
+                        result["city"] = parent
         return result
 
     def _find_parent_city(self, county, state, country, lat, lng):
