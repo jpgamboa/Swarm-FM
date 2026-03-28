@@ -3,7 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>swarmfm — Generate Your Listening Map</title>
+<title>SwarmFM — Map Your Music Listening History with Foursquare Checkins</title>
+<meta name="description" content="Correlate your Last.fm or Spotify listening history with Foursquare/Swarm checkins. See where you listen to music — by venue, city, and country. Interactive dashboard with maps, charts, and trip detection. Free, open-source, runs entirely in your browser.">
+<meta name="keywords" content="Last.fm, Spotify, Foursquare, Swarm, listening history, music map, scrobble, checkin, dashboard, data visualization, music analytics, travel music, listening habits, venue plays, trip detection, music stats">
+<meta name="author" content="JP Gamboa">
+<link rel="canonical" href="https://swarmfm.jpgamboa.com/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="SwarmFM — Map Your Music Listening History">
+<meta property="og:description" content="Correlate your Last.fm or Spotify history with Foursquare checkins. Discover where you listen to music — by venue, city, country, and trip. Free and open-source.">
+<meta property="og:url" content="https://swarmfm.jpgamboa.com/">
+<meta property="og:site_name" content="SwarmFM">
+<meta property="og:image" content="https://swarmfm.jpgamboa.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SwarmFM — Map Your Music Listening History">
+<meta name="twitter:description" content="Correlate Last.fm or Spotify with Foursquare checkins. See where you listen to music — interactive dashboard with maps, charts, and trip stats.">
+<meta name="twitter:image" content="https://swarmfm.jpgamboa.com/og-image.png">
+
+<!-- Structured data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "SwarmFM",
+  "url": "https://swarmfm.jpgamboa.com/",
+  "description": "Correlate your Last.fm or Spotify listening history with Foursquare/Swarm checkins to generate an interactive music listening map.",
+  "applicationCategory": "MusicApplication",
+  "operatingSystem": "Any (browser-based)",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "author": { "@type": "Person", "name": "JP Gamboa", "url": "https://jpgamboa.com" },
+  "license": "https://opensource.org/licenses/MIT"
+}
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&family=Inter:wght@300..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -187,19 +224,19 @@ h1 span { color: var(--accent); }
   accent-color: var(--accent);
 }
 .home-row-labels {
-  display: grid; grid-template-columns: 2fr 1fr 140px 90px 90px 24px;
-  gap: 6px; margin-bottom: 6px; padding: 0 2px;
-  font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-faint);
+  display: grid; grid-template-columns: 2fr 1fr 120px 80px 80px 20px;
+  gap: 5px; margin-bottom: 6px; padding: 0 2px;
+  font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-faint);
   text-transform: uppercase; letter-spacing: .04em;
 }
 .home-row {
-  display: grid; grid-template-columns: 2fr 1fr 140px 90px 90px 24px;
-  gap: 6px; margin-bottom: 6px; align-items: center;
+  display: grid; grid-template-columns: 2fr 1fr 120px 80px 80px 20px;
+  gap: 5px; margin-bottom: 6px; align-items: center;
 }
 .home-row input, .home-row select {
   background: var(--card2); border: 1px solid var(--border); border-radius: 6px;
-  padding: 6px 8px; color: var(--text); font-family: var(--font-body); font-size: .8rem;
-  height: 34px;
+  padding: 5px 6px; color: var(--text); font-family: var(--font-body); font-size: .75rem;
+  height: 32px; min-width: 0;
 }
 .home-row select { cursor: pointer; }
 .home-row select option { background: var(--card2); color: var(--text); }

@@ -841,9 +841,9 @@ function renderFoursquare() {
         hovertemplate: '%{y}: %{x:,}<extra></extra>',
       },
     ], L({
-      margin: { t: 24, r: 16, b: 40, l: 130 },
+      margin: { t: 24, r: 16, b: 40, l: 10 },
       xaxis: { gridcolor: GRID, zerolinecolor: GRID },
-      yaxis: { gridcolor: GRID, zerolinecolor: GRID, automargin: true },
+      yaxis: { gridcolor: GRID, zerolinecolor: GRID, automargin: true, ticksuffix: '  ' },
     }), CFG);
   } else {
     document.getElementById('chart-fs-city').innerHTML =
@@ -916,9 +916,9 @@ function renderFoursquare() {
       hovertemplate: '<b>%{y}</b><br>%{x:,} scrobbles<extra></extra>',
     },
   ], L({
-    margin: { t: 16, r: 16, b: 40, l: 200 },
+    margin: { t: 16, r: 16, b: 40, l: 10 },
     xaxis: { gridcolor: GRID, zerolinecolor: GRID },
-    yaxis: { gridcolor: GRID, zerolinecolor: GRID, automargin: true },
+    yaxis: { gridcolor: GRID, zerolinecolor: GRID, automargin: true, ticksuffix: '  ' },
   }), CFG);
 
   // 8. Venue artists table
