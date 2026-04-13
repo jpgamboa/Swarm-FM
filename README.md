@@ -1,16 +1,16 @@
-# Swarm-FM
+# Check-Ins-FM
 
 Compare your Last.fm or Spotify listening history against your Foursquare/Swarm checkins — generates a self-contained HTML dashboard with no database, no server, just Python and a browser.
 
 **What you get:** an interactive dashboard showing where and how you listen to music — attributed scrobbles by venue, venue type, city, and country; a world map of listening hotspots; trip detection with per-trip listening stats; day-of-week and monthly patterns for both plays and checkins; and a travel artist affinity chart showing which artists you reach for on the road. Spotify users also get listening time graphs, platform breakdowns, and skip rate analysis.
 
-**[Try it in your browser](https://jpgamboa.github.io/Swarm-FM/)**: no install required, runs entirely client-side.
+**[Try it in your browser](https://jpgamboa.github.io/Check-Ins-FM/)**: no install required, runs entirely client-side.
 
 ## Web App
 
 A browser-based version is available at the project's GitHub Pages site — no Python install needed. Everything runs client-side via [Pyodide](https://pyodide.org/) (Python compiled to WebAssembly).
 
-1. Visit the [hosted page](https://jpgamboa.github.io/Swarm-FM/) (or serve `docs/` locally: `cd docs && python3 -m http.server 8765`)
+1. Visit the [hosted page](https://jpgamboa.github.io/Check-Ins-FM/) (or serve `docs/` locally: `cd docs && python3 -m http.server 8765`)
 2. Drop your Last.fm CSV or Spotify JSON files + Foursquare JSON exports
 3. Enter your home cities (recommended) or use auto-detect
 4. Files are parsed and correlated in your browser — preview charts show while geocoding runs
@@ -39,7 +39,7 @@ Spotify data includes richer metadata than Last.fm: actual play duration, skip/s
 These sections only appear when Spotify data is present — Last.fm users see the standard dashboard without empty boxes.
 
 ### Using both sources together
-If you have Last.fm history from earlier years and Spotify from later years, you can provide both. Swarm-FM will use Last.fm for the period before your Spotify data begins and Spotify for everything after, giving you the longest possible history with the richest available metadata.
+If you have Last.fm history from earlier years and Spotify from later years, you can provide both. Check-Ins-FM will use Last.fm for the period before your Spotify data begins and Spotify for everything after, giving you the longest possible history with the richest available metadata.
 
 ## Foursquare/Swarm export
 
@@ -87,8 +87,8 @@ The most recent matching checkin wins if windows overlap.
 
 **1. Clone the repo**
 ```bash
-git clone https://github.com/yourusername/swarmfm.git
-cd swarmfm
+git clone https://github.com/yourusername/Check-Ins-FM.git
+cd Check-Ins-FM
 ```
 
 **2. Export your music history**

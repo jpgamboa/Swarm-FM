@@ -54,7 +54,7 @@ def fetch_rows(city, split, offset=0, length=PAGE_SIZE, max_retries=5):
     for attempt in range(max_retries):
         try:
             req = urllib.request.Request(url, headers={
-                "User-Agent": "swarm-fm-seed-builder/1.0",
+                "User-Agent": "checkins-fm-seed-builder/1.0",
             })
             with urllib.request.urlopen(req, timeout=30) as resp:
                 return json.loads(resp.read().decode("utf-8"))

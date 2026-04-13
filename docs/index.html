@@ -3,39 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SwarmFM — Map Your Music Listening History with Foursquare Checkins</title>
+<title>Check-Ins FM — Map Your Music Listening History with Foursquare Checkins</title>
 <meta name="description" content="Correlate your Last.fm or Spotify listening history with Foursquare/Swarm checkins. See where you listen to music — by venue, city, and country. Interactive dashboard with maps, charts, and trip detection. Free, open-source, runs entirely in your browser.">
 <meta name="keywords" content="Last.fm, Spotify, Foursquare, Swarm, listening history, music map, scrobble, checkin, dashboard, data visualization, music analytics, travel music, listening habits, venue plays, trip detection, music stats">
 <meta name="author" content="JP Gamboa">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#c8ff00">
-<link rel="canonical" href="https://swarmfm.jpgamboa.com/">
+<link rel="canonical" href="https://checkinsfm.jpgamboa.com/">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎧</text></svg>">
 
 <!-- Open Graph -->
 <meta property="og:locale" content="en_US">
 <meta property="og:type" content="website">
-<meta property="og:title" content="SwarmFM — Map Your Music Listening History">
+<meta property="og:title" content="Check-Ins FM — Map Your Music Listening History">
 <meta property="og:description" content="Correlate your Last.fm or Spotify history with Foursquare checkins. Discover where you listen to music — by venue, city, country, and trip. Free and open-source.">
-<meta property="og:url" content="https://swarmfm.jpgamboa.com/">
-<meta property="og:site_name" content="SwarmFM">
-<meta property="og:image" content="https://swarmfm.jpgamboa.com/og-image.png">
+<meta property="og:url" content="https://checkinsfm.jpgamboa.com/">
+<meta property="og:site_name" content="Check-Ins FM">
+<meta property="og:image" content="https://checkinsfm.jpgamboa.com/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="SwarmFM — Map Your Music Listening History">
+<meta name="twitter:title" content="Check-Ins FM — Map Your Music Listening History">
 <meta name="twitter:description" content="Correlate Last.fm or Spotify with Foursquare checkins. See where you listen to music — interactive dashboard with maps, charts, and trip stats.">
-<meta name="twitter:image" content="https://swarmfm.jpgamboa.com/og-image.png">
+<meta name="twitter:image" content="https://checkinsfm.jpgamboa.com/og-image.png">
 
 <!-- Structured data -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "name": "SwarmFM",
-  "url": "https://swarmfm.jpgamboa.com/",
+  "name": "Check-Ins FM",
+  "url": "https://checkinsfm.jpgamboa.com/",
   "description": "Correlate your Last.fm or Spotify listening history with Foursquare/Swarm checkins to generate an interactive music listening map.",
   "applicationCategory": "MusicApplication",
   "operatingSystem": "Any (browser-based)",
@@ -436,9 +436,9 @@ iframe#dashboard-frame {
   <!-- ================================================================== -->
   <div id="upload-section">
     <div style="display:flex;align-items:center;justify-content:space-between">
-      <h1>swarm<span>fm</span></h1>
+      <h1>check-ins<span>fm</span></h1>
       <div class="header-links" style="display:flex;align-items:center;gap:14px">
-        <a href="https://github.com/jpgamboa/Swarm-FM" target="_blank" title="View on GitHub" style="color:var(--text-faint);transition:color .2s">
+        <a href="https://github.com/jpgamboa/Check-Ins-FM" target="_blank" title="View on GitHub" style="color:var(--text-faint);transition:color .2s">
           <svg width="22" height="22" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
         </a>
         <a href="https://jpgamboa.com" target="_blank" style="color:var(--text-faint);font-family:var(--font-mono);font-size:.72rem;text-decoration:none;transition:color .2s">jpgamboa.com</a>
@@ -685,7 +685,7 @@ const progressStatus = $('progress-status');
 const logEl          = $('log');
 const dashboardFrame = $('dashboard-frame');
 const clearCacheBtn  = $('clear-cache-btn');
-const CACHE_KEY = 'swarmfm_geo';
+const CACHE_KEY = 'checkinsfm_geo';
 
 function _getCacheEntryCount() {
   try {
@@ -709,7 +709,7 @@ $('download-cache-btn').addEventListener('click', async () => {
   const blob = new Blob([JSON.stringify(merged, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'swarmfm_geo_cache.json';
+  a.download = 'checkinsfm_geo_cache.json';
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -1294,7 +1294,7 @@ function stopGeoFacts() {
 }
 
 async function geocodeCoords(coords, airportVenues = {}) {
-  const CACHE_KEY = 'swarmfm_geo';
+  const CACHE_KEY = 'checkinsfm_geo';
   const seed = await _loadGeoSeed();
   const cache = { ...seed, ...JSON.parse(localStorage.getItem(CACHE_KEY) || '{}') };
   const results = {};
@@ -1369,7 +1369,7 @@ async function geocodeCoords(coords, airportVenues = {}) {
       const airportName = airportVenues[key];
       if (airportName) {
         const searchUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(airportName)}&format=jsonv2&limit=1&addressdetails=1`;
-        const sr = await fetch(searchUrl, { headers: { 'User-Agent': 'swarmfm/1.0' } });
+        const sr = await fetch(searchUrl, { headers: { 'User-Agent': 'checkinsfm/1.0' } });
         const sd = await sr.json();
         if (sd.length > 0 && sd[0].address) {
           const sa = sd[0].address;
@@ -1387,7 +1387,7 @@ async function geocodeCoords(coords, airportVenues = {}) {
 
       if (!resolved) {
         const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=jsonv2&zoom=10&addressdetails=1`;
-        const r = await fetch(url, { headers: { 'User-Agent': 'swarmfm/1.0' } });
+        const r = await fetch(url, { headers: { 'User-Agent': 'checkinsfm/1.0' } });
         const d = await r.json();
         const a = d.address || {};
         let city = extractCity(a);
@@ -1400,7 +1400,7 @@ async function geocodeCoords(coords, airportVenues = {}) {
           try {
             await new Promise(r => setTimeout(r, 1100));
             const bUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=jsonv2&zoom=5&addressdetails=1`;
-            const br = await fetch(bUrl, { headers: { 'User-Agent': 'swarmfm/1.0' } });
+            const br = await fetch(bUrl, { headers: { 'User-Agent': 'checkinsfm/1.0' } });
             const bd = await br.json();
             const ba = bd.address || {};
             if (ba.city) {
@@ -1409,7 +1409,7 @@ async function geocodeCoords(coords, airportVenues = {}) {
               await new Promise(r => setTimeout(r, 1100));
               const pq = encodeURIComponent(`city in ${a.county} ${a.state}`);
               const pUrl = `https://nominatim.openstreetmap.org/search?q=${pq}&format=jsonv2&limit=1&addressdetails=1`;
-              const pr = await fetch(pUrl, { headers: { 'User-Agent': 'swarmfm/1.0' } });
+              const pr = await fetch(pUrl, { headers: { 'User-Agent': 'checkinsfm/1.0' } });
               const pd = await pr.json();
               if (pd.length > 0 && pd[0].address && pd[0].address.city && pd[0].boundingbox) {
                 const [south, north, west, east] = pd[0].boundingbox.map(Number);
@@ -2005,7 +2005,7 @@ $('download-btn').addEventListener('click', () => {
   if (!window._dashboardBlob) return;
   const a = document.createElement('a');
   a.href = URL.createObjectURL(window._dashboardBlob);
-  a.download = 'swarmfm_dashboard.html';
+  a.download = 'checkinsfm_dashboard.html';
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -2170,7 +2170,7 @@ async function _checkDependencies() {
   _setDepStatus('dep-nominatim', 'checking', 'Checking Nominatim...');
   try {
     const r = await fetch('https://nominatim.openstreetmap.org/status?format=json', {
-      headers: { 'User-Agent': 'swarmfm/1.0' }, signal: AbortSignal.timeout(8000)
+      headers: { 'User-Agent': 'checkinsfm/1.0' }, signal: AbortSignal.timeout(8000)
     });
     if (r.ok) {
       _setDepStatus('dep-nominatim', 'ok', 'Nominatim API reachable (nominatim.openstreetmap.org)');
@@ -2204,7 +2204,7 @@ _checkDependencies();
 <div style="max-width:560px;margin:60px auto;padding:32px;background:var(--card);border:1px solid var(--border);border-radius:14px;color:var(--text);font-family:var(--font-body);line-height:1.6">
   <h2 style="font-family:var(--font-display);font-size:1.5rem;margin-bottom:16px">How to get your Foursquare data</h2>
 
-  <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:16px">There are two ways to export your Foursquare/Swarm checkin history. Either method produces JSON files that work with Swarm-FM.</p>
+  <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:16px">There are two ways to export your Foursquare/Swarm checkin history. Either method produces JSON files that work with Check-Ins-FM.</p>
 
   <h3 style="font-size:.85rem;color:var(--accent);margin:16px 0 6px">Option 1: Privacy data request</h3>
   <p style="font-size:.85rem">The official way. No coding required, but it can take several days to receive your data.</p>

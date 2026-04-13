@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-swarmfm — Last.fm + Swarm/Foursquare data comparison
+checkinsfm — Last.fm + Swarm/Foursquare data comparison
 ======================================================
 
 Imports your Last.fm scrobble export and Foursquare/Swarm checkin export,
@@ -144,7 +144,7 @@ def main():
         return
 
     # Full pipeline
-    print("swarmfm — running full pipeline")
+    print("checkinsfm — running full pipeline")
     print(f"  Data dir: {cfg.DATA_DIR}")
     print()
 
