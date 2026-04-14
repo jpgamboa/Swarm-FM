@@ -4,7 +4,7 @@ Compare your Last.fm or Spotify listening history against your Foursquare/Swarm 
 
 **What you get:** an interactive dashboard showing where and how you listen to music — attributed scrobbles by venue, venue type, city, and country; a world map of listening hotspots; trip detection with per-trip listening stats; day-of-week and monthly patterns for both plays and checkins; and a travel artist affinity chart showing which artists you reach for on the road. Spotify users also get listening time graphs, platform breakdowns, and skip rate analysis.
 
-**[Try it in your browser](https://jpgamboa.github.io/Check-Ins-FM/)**: no install required, runs entirely client-side.
+**[Try it in your browser](https://jpgamboa.github.io/Check-Ins-FM/)**: no install required, runs entirely client-side. Read the [blog post](https://jpgamboa.com/check-ins-fm-webapp-now-available/) for the full story behind the project.
 
 ## Web App
 

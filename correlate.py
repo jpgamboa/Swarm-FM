@@ -87,7 +87,7 @@ _CAT_WINDOW = {
     "music_venue":  1.5 * 3600,
     "cinema":       0.5 * 3600,
     "hotel":        4 * 3600,
-    "gym":          2 * 3600,
+    "gym":          4 * 3600,
     "work":         4 * 3600,
     "outdoor":      2 * 3600,
     "shopping":     1 * 3600,
