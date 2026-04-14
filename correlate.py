@@ -455,6 +455,16 @@ def _detect_trips(checkins, home_periods):
         )
         countries = Counter(c.get("country_code", "") for c in trip_checkins if c.get("country_code"))
 
+        # Drop countries that represent <20% of the dominant country's checkins
+        # (likely geocoding artifacts near borders)
+        if countries:
+            dominant_count = countries.most_common(1)[0][1]
+            countries = Counter({cc: cnt for cc, cnt in countries.items()
+                                 if cnt >= max(2, dominant_count * 0.2)})
+            # Also drop cities belonging to filtered-out countries
+            cities = Counter({(city, cc): cnt for (city, cc), cnt in cities.items()
+                              if cc in countries})
+
         # Destination label: top countries (excl. home if international) or top cities
         _, trip_home_cc = _home_at(home_periods, start)
         top_countries = [cc for cc, _ in countries.most_common(3) if cc != trip_home_cc]

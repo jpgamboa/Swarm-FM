@@ -1088,13 +1088,19 @@ if (D) {
         dlBtn.style.cssText = 'position:absolute;top:12px;right:48px;z-index:10;padding:6px 14px;border:1px solid #444;border-radius:6px;background:#1e1e24;color:#c8ff00;font:13px Inter,sans-serif;cursor:pointer';
         dlBtn.addEventListener('click', (ev) => {
           ev.stopPropagation();
-          Plotly.toImage(clone, { format: 'png', width: 1200, height: 700 }).then(url => {
+          Plotly.toImage(clone, { format: 'png', width: 1200, height: 700 }).then(dataUrl => {
+            const bin = atob(dataUrl.split(',')[1]);
+            const buf = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+            const blob = new Blob([buf], { type: 'image/png' });
+            const blobUrl = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
+            a.href = blobUrl;
             a.download = (plotDiv.id || 'chart') + '.png';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
           });
         });
         modalContent.style.position = 'relative';
