@@ -1083,12 +1083,28 @@ if (D) {
         const clone = document.createElement('div');
         clone.style.height = '75vh';
         clone.style.width = '100%';
+        const dlBtn = document.createElement('button');
+        dlBtn.textContent = 'Download PNG';
+        dlBtn.style.cssText = 'position:absolute;top:12px;right:48px;z-index:10;padding:6px 14px;border:1px solid #444;border-radius:6px;background:#1e1e24;color:#c8ff00;font:13px Inter,sans-serif;cursor:pointer';
+        dlBtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          Plotly.toImage(clone, { format: 'png', width: 1200, height: 700 }).then(url => {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = (plotDiv.id || 'chart') + '.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          });
+        });
+        modalContent.style.position = 'relative';
+        modalContent.appendChild(dlBtn);
         modalContent.appendChild(clone);
         const layout = JSON.parse(JSON.stringify(plotDiv.layout || {}));
         layout.width = undefined;
         layout.height = undefined;
         Plotly.newPlot(clone, JSON.parse(JSON.stringify(plotDiv.data)), layout,
-          { responsive: true, displayModeBar: true });
+          { responsive: true, displayModeBar: false });
       } else if (tableEl) {
         modalContent.innerHTML = '<div style="overflow:auto;max-height:80vh">' + card.innerHTML + '</div>';
       } else {
